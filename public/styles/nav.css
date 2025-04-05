@@ -1,0 +1,89 @@
+:root {
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sora: "sora", "serif";
+  --inter: "Inter", "serif";
+  --background-black: #010409;
+  --dark-grey: #0d1117;
+  --light-grey: #151b23;
+  --border-color: #50565e;
+  --font-color: rgb(241, 241, 241);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding: 15px 35px;
+  font-size: 15px;
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.left {
+  flex: 2;
+}
+
+.right {
+  display: flex;
+  gap: 35px;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 1;
+}
+.nav i {
+  font-size: 20px;
+}
+
+.nav a {
+  color: rgb(219, 219, 219);
+}
+
+.navI {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.navI a {
+  position: relative;
+  display: inline;
+  font-weight: 500;
+  font-size: 15px;
+  color: rgb(219, 219, 219);
+  text-decoration: none;
+}
+
+.navI a::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: var(--border-color);
+  transform: scaleX(0);
+  transition: transform 0.1s ease-in-out;
+}
+
+.navI a:hover::after {
+  transform: scaleX(1);
+}
+
+.navI a:hover {
+  cursor: pointer;
+}
+
+.navLogo {
+  color: white;
+  text-decoration: none;
+  font-size: 30px;
+  font-weight: 600;
+  font-family: var(--sora);
+  letter-spacing: -2px;
+  word-spacing: 2px;
+}
+
+.navI i {
+  color: rgb(223, 223, 223);
+}

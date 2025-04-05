@@ -1,0 +1,177 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+
+:root {
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sora: "sora", "serif";
+  --inter: "Inter", "serif";
+  --background-black: #010409;
+  --dark-grey: #0d1117;
+  --light-grey: #151b23;
+  --border-color: #50565e;
+  --font-color: rgb(241, 241, 241);
+  --hover-color: #202c33;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, sans-serif;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  font-size: 16px;
+  background-color: black;
+}
+
+.main {
+  padding: 10px;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  background-color: var(--background-black);
+}
+
+.container {
+  background: var(--light-grey);
+  width: 450px;
+  padding: 1.5rem;
+  margin: 50px auto;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+}
+
+form {
+  margin: 2rem;
+}
+
+.form-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  padding: 1.3rem;
+  margin-bottom: 0.4rem;
+  color: white;
+}
+
+input {
+  width: 100%;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid #757575;
+  padding-left: 1.5rem;
+  font-size: 15px;
+  outline: none;
+  color: white;
+}
+
+input::placeholder {
+  color: rgb(170, 170, 170);
+}
+
+.input-group {
+  padding: 1% 0;
+  position: relative;
+  margin-top: 20px;
+}
+.input-group i {
+  position: absolute;
+  color: #ffffff;
+}
+
+.recover {
+  text-align: right;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+.recover a {
+  text-decoration: none;
+  color: blue;
+  font-size: 0.8rem;
+}
+.recover a:hover {
+  text-decoration: underline;
+}
+
+.btn {
+  margin-top: 20px;
+}
+button {
+  font-size: 1.1rem;
+  padding: 8px 0;
+  border-radius: 5px;
+  outline: none;
+  border: none;
+  width: 100%;
+  background: rgb(125, 125, 235);
+  color: white;
+  cursor: pointer;
+  transition: 0.9s;
+}
+button:hover {
+  background: #07001f;
+}
+
+.icons {
+  text-align: center;
+  margin-top: 20px;
+}
+.icons i {
+  color: rgb(125, 125, 235);
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border: 2px solid var(--border-color);
+  margin-left: 0px 22px;
+  transition: 0.5s;
+  width: 85%;
+}
+.icons i:hover {
+  background: #07001f;
+  font-size: 1.6rem;
+  border: 2px solid rgb(125, 125, 235);
+}
+.links {
+  display: flex;
+  padding: 0 4rem;
+  margin-top: 0.9rem;
+  font-weight: bold;
+}
+.links p {
+  color: rgb(219, 219, 219);
+}
+#signUpButton,
+#signInButton {
+  color: rgb(125, 125, 235);
+  border: none;
+  background-color: transparent;
+  font-size: 1rem;
+  font-weight: bold;
+}
+#signUpButton:hover,
+#signInButton:hover {
+  text-decoration: underline;
+  color: blue;
+}
+#signUpErrorMessage,
+#signInErrorMessage {
+  background-color: hsl(327, 90%, 28%);
+  color: white;
+  padding: 10px 20px;
+  margin: 10px;
+  border-radius: 5px;
+  font-size: 1rem;
+  opacity: 0;
+  animation: fadeOut 7s forwards;
+}
+
+.messageDiv {
+  font-size: 0.8rem;
+  color: red;
+}

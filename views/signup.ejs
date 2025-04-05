@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/styles/signup.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="/styles/nav.css" />
+    <script type="module" src="/js/authenticate.js"></script>
+    <title>Signup</title>
+  </head>
+  <body>
+    <div class="main">
+      <div class="nav">
+        <div class="left">
+          <a class="navLogo" href="/">BUDGET BUDDY</a>
+        </div>
+        <div class="right">
+          <div class="navI">
+            <i class="fa-regular fa-circle-user"></i>
+            <a class="signuph">Sign up</a>
+          </div>
+
+          <div class="navI">
+            <i class="fa-solid fa-chart-simple"></i>
+            <a class="dash" href="/dashboard">Dashboard</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="container" id="signup">
+        <h1 class="form-title">Register</h1>
+        <form method="post" action="">
+          <div id="signUpErrorMessage" style="display: none"></div>
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" id="uName" placeholder="Username" required />
+          </div>
+
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="rEmail" placeholder="Email" required />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              id="rPassword"
+              placeholder="Password"
+              required />
+          </div>
+          <div
+            id="signUpMessage"
+            style="display: none"
+            class="messageDiv"></div>
+          <button class="btn" id="submitSignUp" type="button">Sign Up</button>
+        </form>
+
+        <div class="icons">
+          <i class="fab fa-google" id="googleSignUp"></i>
+          <!-- <i class="fab fa-facebook"></i> -->
+        </div>
+        <div class="links">
+          <p>Already Have Account ?</p>
+          <button id="signInButton">Log In</button>
+        </div>
+      </div>
+
+      <div class="container" id="signIn" style="display: none">
+        <h1 class="form-title">Sign In</h1>
+        <form method="post" action="">
+          <div id="signInErrorMessage" style="display: none"></div>
+
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" placeholder="Email" required />
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input
+              type="password"
+              id="password"
+              placeholder="Password"
+              required />
+          </div>
+          <div
+            id="signInMessage"
+            style="display: none"
+            class="messageDiv"></div>
+          <p class="recover">
+            <!-- <a href="#">Forgot password?</a> -->
+          </p>
+          <button class="btn" id="submitSignIn" type="button">Log In</button>
+        </form>
+
+        <div class="icons">
+          <i class="fab fa-google" id="googleSignIn"></i>
+          <!-- <i class="fab fa-facebook"></i> -->
+        </div>
+        <div class="links">
+          <p>Don't have account yet?</p>
+          <button id="signUpButton">Sign Up</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/js/script.js"></script>
+  </body>
+</html>

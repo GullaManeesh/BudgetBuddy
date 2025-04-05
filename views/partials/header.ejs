@@ -1,0 +1,18 @@
+<div class="nav">
+  <a href="/" class="sideLogo">BUDGET BUDDY</a>
+  <div class="navI profile">
+    <div class="dp"><%= user.username.charAt(0).toUpperCase() %></div>
+    <div class="profile-pop">
+      <p class="pop-ele">
+        <i class="fa-solid fa-user"></i> : <%=user.username%>
+      </p>
+      <p class="pop-ele">
+        <i class="fa-regular fa-envelope"></i> : <%=user.email%>
+      </p>
+
+      <a href="/logout" class="logout pop-ele" style="color: red"
+        ><i class="fa-solid fa-arrow-right-from-bracket"></i> logout</a
+      >
+    </div>
+  </div>
+</div>

@@ -1,0 +1,129 @@
+<section id="expenses">
+  <h2 class="title">EXPENSES</h2>
+
+  <div class="expenseCon">
+    <div class="currentBudget">
+      <div class="activeBudgets">
+        <div class="top">
+          <div class="left">
+            <div class="icon"><%= budget.icon || '😀' %></div>
+            <div class="left-part2">
+              <div><%=budget.BudgetName%></div>
+              <% if (!budget) { %>
+              <div>0 items</div>
+              <% } else { %> <% if (budget.expenses.length == 1) { %>
+              <div><%= budget.expenses.length %> item</div>
+              <% } else { %>
+              <div><%= budget.expenses.length %> items</div>
+              <% } %> <% } %>
+            </div>
+          </div>
+          <div class="right">
+            <p>&#8377;<%=budget.BudgetAmount%></p>
+          </div>
+        </div>
+
+        <div class="bottom">
+          <div class="bot-top">
+            <div>&#8377;<%=budget.BudgetSpent%> Spend</div>
+            <div>&#8377;<%=budget.BudgetRemaining%> Remaining</div>
+          </div>
+          <div class="Bar">
+            <div
+              class="progress"
+              data-spent="<%= budget.BudgetSpent %>"
+              data-total="<%= budget.BudgetAmount %>"
+              style="width: 40%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="addExpense">
+      <h1>Add Expense</h1>
+      <form action="/addExpense" class="expenseForm" method="post">
+        <input
+          type="text"
+          placeholder="e.g.Bedroom Decor"
+          name="budgetId"
+          hidden
+          value="<%=budget._id%>" />
+        <div class="expenseNameInput">
+          <h3>Expense Name</h3>
+          <input
+            type="text"
+            placeholder="e.g.Bedroom Decor"
+            name="expenseName"
+            required />
+        </div>
+        <div class="expenseAmountInput">
+          <h3>Expense Amount</h3>
+          <input
+            type="text"
+            placeholder="e.g.1000"
+            name="expenseAmount"
+            required />
+        </div>
+        <button type="submit" class="addExpenseBtn">Add New Expense</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="expenseList">
+    <div class="expenseListHead">
+      <div class="name col">NAME</div>
+      <div class="amount col">AMOUNT</div>
+      <div class="date col">CREATED DATE</div>
+      <div class="action col">ACTION</div>
+    </div>
+    <div class="expenseListBody">
+      <% if (budget && budget.expenses && budget.expenses.length > 0) { %> <%
+      budget.expenses.forEach((expense) => { %>
+      <div class="name colBody"><%= expense.ExpenseName %></div>
+      <div class="amount colBody"><%= expense.ExpenseAmount %></div>
+      <div class="date colBody">
+        <%= expense.CreatedDate.toISOString().split('T')[0] %>
+      </div>
+      <div class="actionBody col">
+        <a href="/expense/delete/<%= budget._id %>/<%= expense._id %>">
+          <i class="fa-solid fa-trash"></i>
+        </a>
+        <i class="fa-solid fa-pen" id="editpen"></i>
+      </div>
+      <div class="expenseEditPopup">
+        <i class="fa-solid fa-circle-xmark closeExpensePopup"></i>
+        <h3>EDIT EXPENSE <%= expense.ExpenseName.toUpperCase() %></h3>
+
+        <form id="expenseEditForm" action="/expense/edit" method="post">
+          <div class="expenseNameInput">
+            <p>Edit Expense Name</p>
+            <input type="hidden" name="ExpenseId" value="<%= expense._id %>" />
+            <input type="hidden" name="budgetId" value="<%= budget._id %>" />
+
+            <input
+              id="expenseName"
+              type="text"
+              value="<%=expense.ExpenseName%>"
+              placeholder="<%=expense.ExpenseName%>"
+              name="expenseName" />
+          </div>
+          <div class="expenseAmountinput expenseInput">
+            <p>Expense Amount</p>
+            <input
+              id="expenseAmount"
+              type="number"
+              value="<%=expense.ExpenseAmount%>"
+              placeholder="<%=expense.ExpenseAmount%>"
+              name="expenseAmount" />
+          </div>
+          <button class="editExpenseBtn" type="submit">Edit Expense</button>
+        </form>
+      </div>
+      <% }) %> <% } else { %>
+      <div class="noExpenses" style="padding: 10px">No expenses found.</div>
+
+      <% } %>
+    </div>
+  </div>
+  <!-- <div class="notification-popup">added expense successfully</div> -->
+</section>

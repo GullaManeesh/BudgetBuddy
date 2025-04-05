@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@100..800&display=swap");
+
+:root {
+  --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sora: "sora", "serif";
+  --inter: "Inter", "serif";
+  --background-black: #010409;
+  --dark-grey: #0d1117;
+  --light-grey: #151b23;
+  --border-color: #50565e;
+  --font-color: rgb(241, 241, 241);
+  --hover-color: #202c33;
+}
+::selection {
+  background-color: white;
+  color: black;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+html,
+body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--background-black);
+  color: rgb(219, 219, 219);
+}
+
+.main {
+  padding: 10px;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+}
+
+.intro {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.intro h1 {
+  font-size: 160px;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.intro p {
+  line-height: 1;
+  margin-left: 8px;
+  font-weight: 600;
+}

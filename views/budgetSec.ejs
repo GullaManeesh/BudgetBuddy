@@ -1,0 +1,139 @@
+<section id="budgets">
+  <div class="container">
+    <h2 class="title">MY BUDGETS</h2>
+
+    <div class="budgetsBox">
+      <div class="createBudget">
+        <div>+</div>
+        <div class="action">createBudget</div>
+      </div>
+
+      <% user.budgets.forEach((budget)=>{%>
+      <div class="createdBudgets">
+        <div class="edit-popup">
+          <i class="fa-solid fa-circle-xmark closeEditPopup"></i>
+          <p>Edit budget <%=budget.BudgetName%></p>
+
+          <form id="EditForm" action="/editBudget" method="post">
+            <div class="emojiInput budgetInput">
+              <h2>Select Icon</h2>
+              <div class="emoji-container">
+                <input
+                  type="text"
+                  class="selectedEmoji"
+                  name="budgetEmoji"
+                  value="<%= budget.icon || '😀' %>"
+                  readonly
+                  required />
+                <emoji-picker class="emojiPicker"></emoji-picker>
+              </div>
+            </div>
+            <div class="budgetNameInput budgetInput">
+              <h2>Edit Budget Name</h2>
+              <input type="hidden" name="budgetId" value="<%= budget._id %>" />
+              <input
+                id="budgetName"
+                type="text"
+                value="<%=budget.BudgetName%>"
+                placeholder="<%=budget.BudgetName%>"
+                name="budgetName" />
+            </div>
+            <div class="budgetAmountInput budgetInput">
+              <h2>Budget Amount</h2>
+              <input
+                id="budgetAmount"
+                type="number"
+                value="<%=budget.BudgetAmount%>"
+                placeholder="<%=budget.BudgetAmount%>"
+                name="budgetAmount" />
+            </div>
+            <button class="editBudgetBtn" type="submit">Edit Budget</button>
+          </form>
+        </div>
+        <div class="top">
+          <div class="left">
+            <div class="icon"><%= budget.icon || '😀' %></div>
+            <div class="left-part2">
+              <div><%=budget.BudgetName%></div>
+              <% if (budget.expenses.length == 1) { %>
+              <div><%= budget.expenses.length %> item</div>
+              <% } else { %>
+              <div><%= budget.expenses.length %> items</div>
+              <% } %>
+            </div>
+          </div>
+          <div class="right">
+            <i class="fa-solid fa-ellipsis-vertical three-dots">
+              <div class="menu-popup">
+                <a href="" class="editBudget">Edit</a>
+                <form action="/deletebudget" method="POST" class="deleteBudget">
+                  <input
+                    type="hidden"
+                    name="budgetId"
+                    value="<%= budget._id %>" />
+                  <button type="submit" class="delete">Delete</button>
+                </form>
+              </div>
+            </i>
+            <p>&#8377;<%=budget.BudgetAmount%></p>
+          </div>
+        </div>
+
+        <div class="bottom">
+          <div class="bot-top">
+            <div>&#8377;<%=budget.BudgetSpent%> Spend</div>
+            <div>&#8377;<%=budget.BudgetRemaining%> Remaining</div>
+          </div>
+          <div class="Bar">
+            <div
+              class="progress"
+              data-spent="<%= budget.BudgetSpent %>"
+              data-total="<%= budget.BudgetAmount %>"></div>
+          </div>
+          <a href="/expense/<%=budget._id%>">Add Expenses</a>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+
+    <div class="createBudgetPopup">
+      <i class="fa-solid fa-circle-xmark closePopup"></i>
+      <p>CREATE NEW BUDGET</p>
+
+      <form id="budgetForm" action="/createBudget" method="post">
+        <div class="emojiInput budgetInput">
+          <h2>Select Icon</h2>
+          <div class="emoji-container">
+            <input
+              type="text"
+              id="selectedEmoji"
+              name="budgetEmoji"
+              placeholder="😀"
+              readonly
+              required />
+            <emoji-picker id="emojiPicker"></emoji-picker>
+          </div>
+        </div>
+        <div class="budgetNameInput budgetInput">
+          <h2>Budget Name</h2>
+          <input
+            id="budgetName"
+            type="text"
+            placeholder="e.g. Home Decor"
+            name="budgetName"
+            required />
+        </div>
+        <div class="budgetAmountInput budgetInput">
+          <h2>Budget Amount</h2>
+          <input
+            id="budgetAmount"
+            type="number"
+            placeholder="e.g. 5000"
+            name="budgetAmount"
+            required />
+        </div>
+        <button class="createBudgetBtn" type="submit">Create Budget</button>
+      </form>
+    </div>
+  </div>
+</section>

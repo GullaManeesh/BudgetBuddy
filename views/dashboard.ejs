@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1.12.0/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" />
+    <link rel="stylesheet" href="/styles/dashboard.css" />
+    <link rel="stylesheet" href="/styles/budget.css" />
+    <link rel="stylesheet" href="/styles/expense.css" />
+    <link rel="stylesheet" href="/styles/sidebarNav.css" />
+    <title>Dashboard</title>
+  </head>
+  <body>
+    <%- include('./partials/sidebar') %> <%- include('./partials/header') %>
+    <div class="main">
+      <%- include('dashSec') %> <%- include('budgetSec') %>
+      <%-include('expensesSec') %>
+    </div>
+
+    <script type="module" src="/js/dashboard.js"></script>
+    <script type="module" src="/js/budget.js"></script>
+    <script type="module" src="/js/expenses.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </body>
+</html>
