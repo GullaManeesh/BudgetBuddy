@@ -1,15 +1,38 @@
 <section id="dashSec">
-  <div class="dashCon" data-expense="<%=expense%>" style="color: white">
-    <div class="Charts">
-      <div class="todaysExpenses">
-        <div>
-          <h1>TODAYS EXPENSES</h1>
-        </div>
-        <div class="todaysCharts">
-          <canvas id="myChart1" width="50" height="50"></canvas>
-          <canvas id="myChart2" width="500" height="500">hello</canvas>
-        </div>
-      </div>
+  <div class="dashCon">
+    <!-- Welcome Message -->
+    <div class="welcome-msg">
+      <h1>Welcome <%=user.username%>✌️</h1>
     </div>
+
+    <!-- Recent Expenses Section -->
+
+    <!-- Expenses Container -->
+    <div class="recentExpensesCon">
+      <div class="recentExpensesHeading">
+        <h1>RECENT EXPENSES</h1>
+      </div>
+      <!-- Column Headings -->
+      <div class="recentExpensesColumns">
+        <div class="category-heading head-col"><p>BUDGET</p></div>
+        <div class="expense-heading head-col"><p>EXPENSE</p></div>
+        <div class="date-heading head-col"><p>CREATED DATE</p></div>
+        <div class="amount-heading head-col"><p>AMOUNT</p></div>
+      </div>
+
+      <!-- Dynamically Generated Expenses -->
+      <% expenses.forEach(expense => { %>
+      <div class="recents">
+        <div class="category body-col"><p><%= expense.BudgetName %></p></div>
+        <div class="expense body-col"><p><%= expense.ExpenseName %></p></div>
+        <div class="date body-col">
+          <p><%= expense.CreatedDate.toISOString().split('T')[0] %></p>
+        </div>
+        <div class="amount body-col"><p><%= expense.ExpenseAmount%></p></div>
+      </div>
+      <% }) %>
+    </div>
+    <!-- End of Container -->
   </div>
+  <!-- End of Main -->
 </section>

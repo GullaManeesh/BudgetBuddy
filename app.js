@@ -94,6 +94,13 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
   });
   const expense = user.budgets.map((budget) => budget.expenses).flat();
 
+  const expenses = await expenseModel
+    .find({
+      User: new ObjectId(user._id),
+    })
+    .sort({ CreatedDate: -1 })
+    .limit(5);
+
   const budgetId = req.session.budgetId;
   let budget = "";
   if (budgetId) {
@@ -101,11 +108,11 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
       .findOne({ _id: new ObjectId(budgetId) })
       .populate("expenses");
   }
-  console.log(expense);
   res.render("dashboard", {
     user: user,
     budget,
     expense: JSON.stringify(expense),
+    expenses,
   });
 });
 
@@ -168,6 +175,7 @@ app.post("/addExpense", async (req, res) => {
     ExpenseAmount: Number(expenseAmount),
     BudgetName: budget.BudgetName,
     Budget: budget._id,
+    User: budget.User,
   });
 
   budget.BudgetSpent += createdExpense.ExpenseAmount;

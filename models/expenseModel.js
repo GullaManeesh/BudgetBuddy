@@ -12,6 +12,10 @@ const expenseSchema = {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Budgets",
   },
+  User: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Users",
+  },
 };
 
 module.exports = mongoose.model("Expenses", expenseSchema);

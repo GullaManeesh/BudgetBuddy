@@ -33,6 +33,11 @@ body {
   height: 100%;
   width: 100%;
   padding: 10px 20px;
+  overflow-y: scroll;
+}
+
+.container::-webkit-scrollbar {
+  display: none;
 }
 
 .title {
