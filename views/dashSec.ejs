@@ -1,14 +1,20 @@
 <section id="dashSec">
-  <div class="dashCon">
-    <!-- Welcome Message -->
-    <div class="welcome-msg">
-      <h1>Welcome <%=user.username%>✌️</h1>
+  <div class="welcome-msg">
+    <h1>Welcome <%=user.username%>✌️</h1>
+  </div>
+  <div class="dashCon" data-expenses="<%= JSON.stringify(expenses) %>">
+    <div class="piecharts grid-area:box-4"></div>
+
+    <div class="charts" style="grid-area: box-1">
+      <div class="dailyExpensesChart">
+        <button id="toggleChart">Switch to Monthly</button>
+
+        <canvas id="myChart1" style="height: 100% !important"></canvas>
+      </div>
     </div>
 
-    <!-- Recent Expenses Section -->
-
     <!-- Expenses Container -->
-    <div class="recentExpensesCon">
+    <div class="recentExpensesCon" style="grid-area: box-2">
       <div class="recentExpensesHeading">
         <h1>RECENT EXPENSES</h1>
       </div>
@@ -18,10 +24,11 @@
         <div class="expense-heading head-col"><p>EXPENSE</p></div>
         <div class="date-heading head-col"><p>CREATED DATE</p></div>
         <div class="amount-heading head-col"><p>AMOUNT</p></div>
+        <!-- <div class="amount-heading head-col"><p>ACTION</p></div> -->
       </div>
 
       <!-- Dynamically Generated Expenses -->
-      <% expenses.forEach(expense => { %>
+      <% expenses.slice(0, 5).forEach(expense => { %>
       <div class="recents">
         <div class="category body-col"><p><%= expense.BudgetName %></p></div>
         <div class="expense body-col"><p><%= expense.ExpenseName %></p></div>
@@ -29,10 +36,34 @@
           <p><%= expense.CreatedDate.toISOString().split('T')[0] %></p>
         </div>
         <div class="amount body-col"><p><%= expense.ExpenseAmount%></p></div>
+        <!-- <div class="actionBody body-col">
+          <a href="/expense/delete/<%= budget._id %>/<%= expense._id %>">
+            <i class="fa-solid fa-trash"></i>
+          </a>
+          <i class="fa-solid fa-pen" id="editpen"></i>
+        </div> -->
       </div>
+
       <% }) %>
+    </div>
+
+    <div
+      class="pieCharts"
+      data-budgets="<%=budgetsData%>"
+      style="grid-area: box-3">
+      <div class="budgetSpentPie">
+        <canvas id="budgetPieChart"></canvas>
+      </div>
+      <div class="monthlyPieChartCon">
+        <canvas id="monthlyBudgetPieChart"></canvas>
+        <div>
+          <label for="monthSelector" style="color: white">Select Month:</label>
+          <select id="monthSelector"></select>
+        </div>
+      </div>
     </div>
     <!-- End of Container -->
   </div>
+
   <!-- End of Main -->
 </section>

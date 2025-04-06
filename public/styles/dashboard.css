@@ -53,20 +53,27 @@ section {
 }
 
 .dashCon {
-  padding: 20px;
   height: 100vh;
+  padding: 0px 20px;
   width: 100%;
   color: white;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  grid-template-rows: 400px auto;
+  grid-template-areas:
+    "box-1 box-3"
+    "box-2 box-3";
+  gap: 20px;
 }
 
 .recentExpensesCon {
-  width: 100%;
-  height: auto;
-
-  overflow-y: scroll;
+  background-color: pink;
   background-color: var(--dark-grey);
+  overflow-y: scroll;
+  margin-top: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
 }
-
 .recentExpensesCon::-webkit-scrollbar {
   display: none;
 }
@@ -83,6 +90,8 @@ section {
 }
 
 .welcome-msg {
+  margin-left: 20px;
+  margin-top: 20px;
   font-size: 1.1rem;
   color: white;
   padding-bottom: 25px;
@@ -110,7 +119,6 @@ section {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   background-color: var(--hover-color);
-  height: 100%;
 }
 
 .body-col {
@@ -119,4 +127,111 @@ section {
   justify-content: center;
   align-items: center;
   border: 1px solid var(--border-color);
+}
+
+.charts::-webkit-scrollbar {
+  display: none;
+}
+
+#myChart1 {
+  background-color: var(--light-grey);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  padding: 20px;
+}
+
+.charts {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 400px;
+  position: relative;
+  direction: rtl;
+}
+
+#toggleChart {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 10;
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: rgb(85, 85, 222);
+  outline: none;
+  border: none;
+  border-radius: 5px;
+  color: white;
+}
+
+.dailyExpensesChart {
+  position: relative;
+  min-width: 900px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.pieCharts {
+  padding: 10px 20px;
+  background-color: var(--hover-color);
+  overflow-y: scroll;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.pieCharts::-webkit-scrollbar {
+  display: none;
+}
+
+.budgetSpentPie {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  margin-bottom: 50px;
+  background-color: var(--light-grey);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+#budgetPieChart {
+  width: 500px;
+}
+
+.monthlyPieChartCon {
+  background-color: var(--light-grey);
+  padding: 20px;
+  width: 100%;
+  display: flex;
+  border-radius: 10px;
+
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  height: 300px;
+}
+
+#monthSelector {
+  background-color: var(--background-black);
+  color: #ffffff;
+  border: 1px solid #555;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+#monthSelector:hover {
+  border-color: #888;
+}
+
+#monthSelector:focus {
+  border-color: #aaa;
 }

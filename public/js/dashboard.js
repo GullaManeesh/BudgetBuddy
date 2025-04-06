@@ -1,166 +1,365 @@
+let chartInstance;
+let isMonthly = false;
+
 document.addEventListener("DOMContentLoaded", () => {
   const dashCon = document.querySelector(".dashCon");
-  const expenseData = JSON.parse(dashCon.dataset.expense);
+  const expenseData = JSON.parse(dashCon.dataset.expenses);
+  const toggleBtn = document.getElementById("toggleChart");
 
-  // Group expenses by date for the bar chart (myChart1)
-  const dailyExpenses = expenseData.reduce((acc, expense) => {
-    const date = new Date(expense.CreatedDate).toLocaleDateString();
-    if (!acc[date]) {
-      acc[date] = 0;
-    }
-    acc[date] += expense.ExpenseAmount;
-    return acc;
-  }, {});
+  const pieContainer = document.querySelector(".pieCharts");
+  const rawBudgets = pieContainer.dataset.budgets;
+  const budgets = JSON.parse(rawBudgets);
+  renderPieChart(budgets);
 
-  // Render the bar graph (myChart1) with the grouped daily expenses
-  renderBarGraph(dailyExpenses);
+  const drawChart = () => {
+    const groupedExpenses = isMonthly
+      ? getMonthlyExpenses(expenseData)
+      : getDailyExpenses(expenseData);
 
-  // Get today's date in locale format
-  const today = new Date().toLocaleDateString();
+    if (chartInstance) chartInstance.destroy();
+    renderBarGraph(groupedExpenses);
+  };
 
-  // Filter today's expenses
-  const todayExpenses = expenseData.filter((expense) => {
-    const expenseDate = new Date(expense.CreatedDate).toLocaleDateString();
-    return expenseDate === today;
+  toggleBtn.addEventListener("click", () => {
+    isMonthly = !isMonthly;
+    toggleBtn.textContent = isMonthly ? "Switch to Daily" : "Switch to Monthly";
+    drawChart();
   });
 
-  // Group today's expenses by BudgetName for the doughnut chart (myChart2)
-  const categoryExpensesToday = todayExpenses.reduce((acc, expense) => {
-    const category = expense.BudgetName;
-    if (!acc[category]) {
-      acc[category] = 0;
-    }
-    acc[category] += expense.ExpenseAmount;
-    return acc;
-  }, {});
+  drawChart();
 
-  // Render the doughnut chart (myChart2) with today's category expenses
-  renderDoughnutGraph(categoryExpensesToday);
+  populateMonthSelector(expenseData);
+  document.getElementById("monthSelector").addEventListener("change", (e) => {
+    const selectedMonth = e.target.value;
+    renderMonthlyBudgetPieChart(expenseData, selectedMonth);
+  });
 });
 
-// Function to render the bar chart
-function renderBarGraph(dailyExpenses) {
-  const labels = Object.keys(dailyExpenses);
-  const data = Object.values(dailyExpenses);
+function getDailyExpenses(data) {
+  const dailyExpenses = {};
+  data.forEach((expense) => {
+    const date = new Date(expense.CreatedDate).toISOString().split("T")[0];
+    const amount = parseFloat(expense.ExpenseAmount);
+    dailyExpenses[date] = (dailyExpenses[date] || 0) + amount;
+  });
+
+  return Object.fromEntries(
+    Object.entries(dailyExpenses).sort(
+      (a, b) => new Date(a[0]) - new Date(b[0])
+    )
+  );
+}
+
+function getMonthlyExpenses(data) {
+  const monthlyExpenses = {};
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  data.forEach((expense) => {
+    const date = new Date(expense.CreatedDate);
+    const year = date.getFullYear();
+    const monthName = monthNames[date.getMonth()];
+    const key = `${monthName} ${year}`; // Example: March 2025
+    const amount = parseFloat(expense.ExpenseAmount);
+    monthlyExpenses[key] = (monthlyExpenses[key] || 0) + amount;
+  });
+
+  return Object.fromEntries(
+    Object.entries(monthlyExpenses).sort((a, b) => {
+      const [monthA, yearA] = a[0].split(" ");
+      const [monthB, yearB] = b[0].split(" ");
+      const indexA = monthNames.indexOf(monthA);
+      const indexB = monthNames.indexOf(monthB);
+      return (
+        new Date(`${yearA}-${indexA + 1}`) - new Date(`${yearB}-${indexB + 1}`)
+      );
+    })
+  );
+}
+
+function renderBarGraph(expenses) {
+  const labels = Object.keys(expenses);
+  const data = Object.values(expenses);
 
   const ctx = document.getElementById("myChart1").getContext("2d");
-  new Chart(ctx, {
+  chartInstance = new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
       datasets: [
         {
-          label: "Daily Expenses",
+          label: "Expenses",
           data: data,
-          backgroundColor: "rgb(134, 233, 238)", // Bar color
-          borderColor: "#50565e", // Border color
-          borderWidth: 3,
+          backgroundColor: "rgb(255, 111, 125)",
+          borderWidth: 2,
+          barThickness: 20,
         },
       ],
     },
     options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false,
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: isMonthly
+            ? "Monthly Expense Analysis"
+            : "Daily Expense Analysis",
+          color: "#fff",
+          font: { size: 18, weight: "bold" },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `Amount: ₹${context.parsed.y}`,
+          },
+        },
+        legend: {
+          labels: {
+            color: "white",
+            font: { size: 14 },
+          },
+        },
+      },
       scales: {
         y: {
           beginAtZero: true,
+          title: {
+            display: true,
+            text: "Amount",
+            color: "white",
+            font: { size: 16, weight: "bold" },
+          },
+          grid: {
+            color: "rgba(255, 255, 255, 0.27)",
+          },
+          ticks: {
+            color: "white",
+            font: { size: 14 },
+          },
+        },
+        x: {
+          title: {
+            display: true,
+            text: isMonthly ? "Month" : "Date",
+            color: "white",
+            font: { size: 16, weight: "bold" },
+          },
+          grid: {
+            color: "rgba(255, 255, 255, 0.27)",
+          },
+          ticks: {
+            color: "white",
+            font: { size: 14 },
+          },
         },
       },
     },
   });
 }
 
-// Function to render the doughnut chart
-function renderDoughnutGraph(categoryExpenses) {
-  const labels = Object.keys(categoryExpenses);
-  const data = Object.values(categoryExpenses);
+function renderPieChart(budgets) {
+  const ctx = document.getElementById("budgetPieChart").getContext("2d");
 
-  // Use more distinct colors with better contrast
-  const backgroundColor = [
-    "rgba(255, 99, 132, 0.7)",
-    "rgba(54, 162, 235, 0.7)",
-    "rgba(255, 206, 86, 0.7)",
-    "rgba(75, 192, 192, 0.7)",
-    "rgba(153, 102, 255, 0.7)",
-    "rgba(255, 159, 64, 0.7)",
-    "rgba(199, 199, 199, 0.7)",
-    "rgba(83, 102, 255, 0.7)",
-  ];
+  const labels = budgets.map((b) => b.BudgetName);
+  const data = budgets.map((b) => b.BudgetSpent);
 
-  const borderColor = "rgba(255, 255, 255, 0.8)";
-  const borderWidth = 2;
-
-  const ctx = document.getElementById("myChart2").getContext("2d");
   new Chart(ctx, {
-    type: "doughnut",
+    type: "pie",
     data: {
       labels: labels,
       datasets: [
         {
           data: data,
-          backgroundColor: backgroundColor,
-          borderColor: borderColor,
-          borderWidth: borderWidth,
-          // Add hover effects
-          hoverBackgroundColor: backgroundColor.map((color) =>
-            color.replace("0.7", "1")
-          ),
-          hoverBorderColor: "rgba(255, 255, 255, 1)",
-          hoverBorderWidth: 3,
+          backgroundColor: [
+            "#FF6384",
+            "#36A2EB",
+            "#FFCE56",
+            "#66BB6A",
+            "#BA68C8",
+            "#FFA726",
+            "#4DD0E1",
+            "#EF5350",
+          ],
+          borderWidth: 1,
         },
       ],
     },
     options: {
       responsive: true,
-      cutout: "70%", // Makes the doughnut thinner
       plugins: {
         legend: {
-          position: "bottom",
+          position: "right",
           labels: {
-            color: "#333", // Darker text for better visibility
-            font: {
-              size: 12,
-            },
-            padding: 20,
+            color: "#fff",
+            font: { size: 14 },
           },
         },
-        tooltip: {
-          enabled: true,
-          callbacks: {
-            label: function (context) {
-              const label = context.label || "";
-              const value = context.raw || 0;
-              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = Math.round((value / total) * 100);
-              return `${label}: $${value.toFixed(2)} (${percentage}%)`;
-            },
-          },
-          bodyFont: {
-            size: 14,
-          },
-          titleFont: {
-            size: 16,
-            weight: "bold",
-          },
-          padding: 12,
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          titleColor: "#fff",
-          bodyColor: "#fff",
-          displayColors: true,
-          borderColor: "rgba(255, 255, 255, 0.2)",
+        title: {
+          display: true,
+          text: "Total Budget-wise Spent Breakdown",
+          color: "#fff",
+          font: { size: 18 },
+        },
+      },
+    },
+  });
+}
+
+let monthlyPieChartInstance;
+
+function populateMonthSelector(expenses) {
+  const monthSet = new Set();
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  expenses.forEach((e) => {
+    const date = new Date(e.CreatedDate);
+    const month = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    monthSet.add(month);
+  });
+
+  const sortedMonths = Array.from(monthSet).sort((a, b) => {
+    const [ma, ya] = a.split(" ");
+    const [mb, yb] = b.split(" ");
+    return (
+      new Date(`${ya}-${monthNames.indexOf(ma) + 1}`) -
+      new Date(`${yb}-${monthNames.indexOf(mb) + 1}`)
+    );
+  });
+
+  const select = document.getElementById("monthSelector");
+  select.innerHTML = ""; // Clear existing options
+
+  const currentDate = new Date();
+  const currentMonthText = `${
+    monthNames[currentDate.getMonth()]
+  } ${currentDate.getFullYear()}`;
+
+  let defaultMonthFound = false;
+
+  sortedMonths.forEach((month) => {
+    const option = document.createElement("option");
+    option.value = month;
+    option.textContent = month;
+    if (month === currentMonthText) {
+      option.selected = true;
+      defaultMonthFound = true;
+    }
+    select.appendChild(option);
+  });
+
+  // If current month is not present, use first month as default
+  const selectedMonth = defaultMonthFound ? currentMonthText : sortedMonths[0];
+  if (selectedMonth) {
+    renderMonthlyBudgetPieChart(expenses, selectedMonth);
+  }
+}
+
+function renderMonthlyBudgetPieChart(expenses, selectedMonth) {
+  const ctx = document.getElementById("monthlyBudgetPieChart").getContext("2d");
+
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const filtered = expenses.filter((e) => {
+    const date = new Date(e.CreatedDate);
+    const formattedMonth = `${
+      monthNames[date.getMonth()]
+    } ${date.getFullYear()}`;
+    return formattedMonth === selectedMonth;
+  });
+
+  const categoryTotals = {};
+  filtered.forEach((e) => {
+    const category = e.BudgetName;
+    const amount = parseFloat(e.ExpenseAmount);
+    categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+  });
+
+  const labels = Object.keys(categoryTotals);
+  const data = Object.values(categoryTotals);
+
+  if (monthlyPieChartInstance) monthlyPieChartInstance.destroy();
+
+  monthlyPieChartInstance = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          data: data,
+          backgroundColor: [
+            "#FF6384",
+            "#36A2EB",
+            "#FFCE56",
+            "#66BB6A",
+            "#BA68C8",
+            "#FFA726",
+            "#4DD0E1",
+            "#EF5350",
+            "#AB47BC",
+            "#26A69A",
+          ],
           borderWidth: 1,
         },
-      },
-      // Ensure hover works properly
-      onHover: (event, chartElement) => {
-        if (chartElement.length) {
-          event.native.target.style.cursor = "pointer";
-        } else {
-          event.native.target.style.cursor = "default";
-        }
-      },
-      // Add animation configuration
-      animation: {
-        animateScale: true,
-        animateRotate: true,
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            color: "#fff",
+            font: { size: 14 },
+          },
+        },
+        title: {
+          display: true,
+          text: `Budget-wise Expenses for ${selectedMonth}`,
+          color: "#fff",
+          font: { size: 18 },
+        },
       },
     },
   });

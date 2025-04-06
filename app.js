@@ -92,14 +92,18 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
       path: "expenses",
     },
   });
+
+  const budgetsData = await budgetModel
+    .find({ User: new ObjectId(user._id) })
+    .sort({ _id: -1 });
+
   const expense = user.budgets.map((budget) => budget.expenses).flat();
 
   const expenses = await expenseModel
     .find({
       User: new ObjectId(user._id),
     })
-    .sort({ CreatedDate: -1 })
-    .limit(5);
+    .sort({ CreatedDate: -1 });
 
   const budgetId = req.session.budgetId;
   let budget = "";
@@ -113,6 +117,7 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
     budget,
     expense: JSON.stringify(expense),
     expenses,
+    budgetsData: JSON.stringify(budgetsData),
   });
 });
 
