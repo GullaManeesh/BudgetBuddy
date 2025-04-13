@@ -119,6 +119,9 @@ submitSignIn.addEventListener("click", (event) => {
 googleSignUp.addEventListener("click", (event) => {
   event.preventDefault();
   const auth = getAuth();
+  provider.setCustomParameters({
+    prompt: "select_account",
+  });
   signInWithPopup(auth, provider)
     .then(async (userCredentials) => {
       const user = userCredentials.user;
@@ -145,6 +148,9 @@ googleSignUp.addEventListener("click", (event) => {
 googleSignIn.addEventListener("click", (event) => {
   event.preventDefault();
   const auth = getAuth();
+  provider.setCustomParameters({
+    prompt: "select_account",
+  });
   signInWithPopup(auth, provider)
     .then(async (userCredentials) => {
       const user = userCredentials.user;

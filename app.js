@@ -7,7 +7,11 @@ const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const budgetModel = require("./models/budgetModel");
 const expenseModel = require("./models/expenseModel");
+const groupModel = require("./models/groupModel");
+const groupExpenseModel = require("./models/groupExpenseModel");
 const session = require("express-session");
+const calculateBalances = require("./utils/calculateBalances");
+
 const ObjectId = mongoose.Types.ObjectId;
 require("dotenv").config();
 
@@ -18,6 +22,12 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      path: "/",
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    },
   })
 );
 
@@ -80,8 +90,22 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-  res.clearCookie("token");
-  res.redirect("/signup");
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send("Logout failed");
+    }
+
+    res.clearCookie("connect.sid", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+    });
+
+    res.clearCookie("token", { path: "/" });
+
+    res.redirect("/signup");
+  });
 });
 
 //-------------------------DASHBOARD----------------------------------------//
@@ -93,6 +117,8 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
     },
   });
 
+  const groups = await groupModel.find({ createdBy: new ObjectId(user._id) });
+
   const budgetsData = await budgetModel
     .find({ User: new ObjectId(user._id) })
     .sort({ _id: -1 });
@@ -100,10 +126,23 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
   const expense = user.budgets.map((budget) => budget.expenses).flat();
 
   const expenses = await expenseModel
-    .find({
-      User: new ObjectId(user._id),
-    })
+    .find({ User: new ObjectId(user._id) })
     .sort({ CreatedDate: -1 });
+
+  let selectedGroup = null;
+  let balances = {};
+  let owes = {}; // Initialize owes here
+  if (req.session.selGroupid) {
+    selectedGroup = await groupModel
+      .findOne({ _id: new ObjectId(req.session.selGroupid) })
+      .populate("expenses");
+
+    if (selectedGroup && selectedGroup.expenses && selectedGroup.members) {
+      const result = calculateBalances(selectedGroup); // Get both balances and owes
+      balances = result.balances;
+      owes = result.owes;
+    }
+  }
 
   const budgetId = req.session.budgetId;
   let budget = "";
@@ -112,12 +151,17 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
       .findOne({ _id: new ObjectId(budgetId) })
       .populate("expenses");
   }
+
   res.render("dashboard", {
     user: user,
     budget,
     expense: JSON.stringify(expense),
     expenses,
     budgetsData: JSON.stringify(budgetsData),
+    groups,
+    selectedGroup,
+    balances,
+    owes,
   });
 });
 
@@ -243,6 +287,138 @@ app.post("/expense/edit", async (req, res) => {
   res.redirect("/dashboard#expenses");
 });
 
+//------------------------------GROUP EXPENSES-------------------------------//
+
+app.post("/groups/create", isLoggedin, async (req, res) => {
+  const { groupName, memberNames } = req.body;
+  const user = await userModel.findOne({ email: req.user.email });
+
+  const namesArray = memberNames.split(",").map((name) => name.trim());
+
+  const members = namesArray.map((name) => ({ name }));
+
+  await groupModel.create({
+    groupName,
+    members,
+    createdBy: user._id,
+    createdAt: new Date(),
+  });
+
+  res.redirect("/dashboard#groupExpenses");
+});
+
+app.post("/groups/edit", isLoggedin, async (req, res) => {
+  const { groupId, groupName, memberNames } = req.body;
+
+  // Split and trim member names
+  const namesArray = memberNames.split(",").map((name) => name.trim());
+  const updatedMembers = namesArray.map((name) => ({ name }));
+
+  // Update the group with new members
+  await groupModel.findOneAndUpdate(
+    { _id: new ObjectId(groupId), createdBy: new ObjectId(req.user.userid) },
+    {
+      groupName: groupName,
+      members: updatedMembers,
+    }
+  );
+
+  // Recalculate expenses to include new members
+  const group = await groupModel.findById(groupId).populate("expenses");
+
+  for (const expense of group.expenses) {
+    const totalAmount = expense.amount;
+    const splitOption = expense.splitOption;
+
+    if (splitOption === "equal") {
+      const perPerson = totalAmount / updatedMembers.length;
+      expense.splits = updatedMembers.map((member) => ({
+        member: member.name,
+        amount: perPerson,
+      }));
+    } else if (splitOption === "manual") {
+      // Handle manual splits if necessary
+      // You may want to implement logic to recalculate manual splits here
+    }
+
+    // Update the expense in the database
+    await groupExpenseModel.findByIdAndUpdate(expense._id, {
+      splits: expense.splits,
+    });
+  }
+
+  res.redirect("/dashboard#groupExpenses");
+});
+app.post("/groupExpenses/add", isLoggedin, async (req, res) => {
+  const { title, amount, date, time, paidBy, splitOption, groupId, splits } =
+    req.body;
+
+  const newExpense = await groupExpenseModel.create({
+    title,
+    amount,
+    date: new Date(date),
+    time,
+    paidBy,
+    splitOption,
+    groupId,
+    splits: splitOption === "manual" ? JSON.parse(splits) : [],
+  });
+
+  await groupModel.findByIdAndUpdate(groupId, {
+    $push: { expenses: newExpense._id },
+  });
+
+  res.redirect(`/dashboard#groupExpenses`);
+});
+
+app.post("/groups/:selGroupid", async (req, res) => {
+  req.session.selGroupid = req.params.selGroupid;
+  res.redirect("/dashboard#groupExpenses");
+});
+
+app.post("/groupExpenses/edit", async (req, res) => {
+  const { expenseId, title, amount, date, paidBy, splitOption, splits } =
+    req.body;
+
+  // Handle case where splits is empty or not valid
+  let parsedSplits = [];
+  try {
+    if (splitOption === "manual") {
+      parsedSplits = splits ? JSON.parse(splits) : [];
+    }
+  } catch (error) {
+    console.error("Error parsing splits:", error);
+    parsedSplits = [];
+  }
+
+  // Update the expense in the database
+  await groupExpenseModel.findByIdAndUpdate(expenseId, {
+    title,
+    amount,
+    date: new Date(date),
+    paidBy,
+    splitOption,
+    splits: parsedSplits, // Save the manual splits if applicable
+  });
+
+  // Redirect to the previous page (or wherever necessary)
+  res.redirect("/dashboard#groupExpenses");
+});
+
+// Delete group expense
+app.post("/groupExpenses/delete", async (req, res) => {
+  const { expenseId, groupId } = req.body;
+
+  console.log(expenseId);
+
+  await groupExpenseModel.findByIdAndDelete(expenseId);
+
+  await groupModel.findByIdAndUpdate(groupId, {
+    $pull: { expenses: expenseId },
+  });
+
+  res.redirect("/dashboard#gorupExpenses");
+});
 //---------------------------------------------------------------------------//
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

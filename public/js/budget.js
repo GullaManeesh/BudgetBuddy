@@ -88,7 +88,7 @@ document.body.appendChild(overlay);
 
 createBudgetBox.addEventListener("click", (event) => {
   event.preventDefault();
-  console.log("clicked");
+
   createBudgetPopup.classList.add("createBudgetPopupShow");
   overlay.classList.add("overlayShow");
 });

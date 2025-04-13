@@ -89,6 +89,10 @@
   transform: translate(-50%, -50%);
 }
 
+#groupAnchor {
+  left: 60%;
+}
+
 .sidebuttons {
   position: relative;
   width: 100%;

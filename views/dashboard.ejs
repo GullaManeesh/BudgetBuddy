@@ -18,18 +18,20 @@
     <link rel="stylesheet" href="/styles/budget.css" />
     <link rel="stylesheet" href="/styles/expense.css" />
     <link rel="stylesheet" href="/styles/sidebarNav.css" />
+    <link rel="stylesheet" href="/styles/groupExpenses.css" />
     <title>Dashboard</title>
   </head>
   <body>
     <%- include('./partials/sidebar') %> <%- include('./partials/header') %>
     <div class="main">
       <%- include('dashSec') %> <%- include('budgetSec') %>
-      <%-include('expensesSec') %>
+      <%-include('expensesSec') %> <%-include('groupExpenses')%>
     </div>
 
     <script type="module" src="/js/dashboard.js"></script>
     <script type="module" src="/js/budget.js"></script>
     <script type="module" src="/js/expenses.js"></script>
+    <script type="module" src="/js/groupExpense.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </body>
 </html>
