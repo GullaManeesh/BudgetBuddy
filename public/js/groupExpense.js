@@ -3,7 +3,7 @@ const createGroup = document.querySelector(".createGroup");
 const overlay = document.querySelector(".overlay");
 const createdGroup = document.querySelectorAll(".createdGroup");
 const groupDetailsBtn = document.querySelectorAll(".groupDetailsBtn");
-const groupDetails = document.querySelectorAll(".groupDetails");
+const groupDetails = document.querySelector(".groupDetails");
 const editGroupDetails = document.querySelectorAll(".EditGroupDetails");
 const editGroupDiv = document.querySelectorAll(".edit-group-div");
 const closeEditgroup = document.getElementById("closeEditGroup");
@@ -24,27 +24,37 @@ createGroup.addEventListener("click", (event) => {
 });
 
 // Group details + send ID
-groupDetailsBtn.forEach((btn, index) => {
+groupDetailsBtn.forEach((btn) => {
   btn.addEventListener("click", async (event) => {
     event.preventDefault();
-    event.stopPropagation();
-
-    groupDetails[index].classList.add("groupDetailsShow");
-    overlay.classList.add("overlayShow");
-
     const groupId = btn.dataset.selgroupid;
+
     try {
-      await axios.post(`/groups/${groupId}`, { groupId });
-      console.log("Group ID sent successfully.");
+      btn.textContent = "Loading...";
+
+      // (1) FIRST: Wait for the fetch to complete
+      const response = await fetch(`/groups/${groupId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      groupDetails.classList.add("groupDetailsShow");
+      overlay.classList.add("overlayShow");
     } catch (error) {
-      console.error("Failed to send Group ID:", error);
+      console.error("Fetch error:", error);
+      alert("Failed to load group details. Please try again.");
+    } finally {
+      btn.textContent = "Group Details";
     }
   });
 });
 
 overlay.addEventListener("click", (event) => {
-  event.preventDefault();
-
   createGroupDiv.classList.remove("create-group-div-popup");
 
   document.querySelectorAll(".groupDetails").forEach((group) => {
@@ -60,6 +70,7 @@ overlay.addEventListener("click", (event) => {
   });
 
   overlay.classList.remove("overlayShow");
+  window.location.reload();
 });
 
 // Scroll inside groupDetails
@@ -263,7 +274,7 @@ document.querySelectorAll(".expense-clickable").forEach((exp) => {
           input.value = 0;
         });
 
-      // Populate with actual split amounts
+      // Set only actual split values > 0
       splits.forEach((split) => {
         const input = document.querySelector(
           `#modalManualSplitContainer input[name="manualSplits[${split.member}]"]`
@@ -310,11 +321,18 @@ document
       );
 
       let totalSplitAmount = 0;
+      const seenMembers = new Set();
+
       inputs.forEach((input) => {
         const member = input.name.match(/\[(.*?)\]/)[1];
         const amount = parseFloat(input.value) || 0;
-        splits.push({ member, amount });
-        totalSplitAmount += amount;
+
+        // Only add members with amount > 0 and not already added
+        if (amount > 0 && !seenMembers.has(member)) {
+          splits.push({ member, amount });
+          totalSplitAmount += amount;
+          seenMembers.add(member);
+        }
       });
 
       const totalAmount =

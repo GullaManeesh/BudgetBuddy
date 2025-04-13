@@ -373,6 +373,7 @@ app.post("/groupExpenses/add", isLoggedin, async (req, res) => {
 
 app.post("/groups/:selGroupid", async (req, res) => {
   req.session.selGroupid = req.params.selGroupid;
+
   res.redirect("/dashboard#groupExpenses");
 });
 
@@ -417,7 +418,7 @@ app.post("/groupExpenses/delete", async (req, res) => {
     $pull: { expenses: expenseId },
   });
 
-  res.redirect("/dashboard#gorupExpenses");
+  res.redirect("/dashboard#groupExpenses");
 });
 //---------------------------------------------------------------------------//
 app.listen(port, () => {
