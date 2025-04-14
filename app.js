@@ -410,8 +410,6 @@ app.post("/groupExpenses/edit", async (req, res) => {
 app.post("/groupExpenses/delete", async (req, res) => {
   const { expenseId, groupId } = req.body;
 
-  console.log(expenseId);
-
   await groupExpenseModel.findByIdAndDelete(expenseId);
 
   await groupModel.findByIdAndUpdate(groupId, {
@@ -419,6 +417,101 @@ app.post("/groupExpenses/delete", async (req, res) => {
   });
 
   res.redirect("/dashboard#groupExpenses");
+});
+
+app.get("/group/:groupId/delete", async (req, res) => {
+  const groupid = req.params.groupId;
+
+  await groupExpenseModel.deleteMany({
+    groupId: new ObjectId(groupid),
+  });
+  await groupModel.findByIdAndDelete(groupid);
+  res.redirect("/dashboard#groupExpenses");
+});
+
+// Add this to your server.js
+app.post("/groups/:groupId", async (req, res) => {
+  try {
+    const groupId = req.params.groupId;
+    const group = await Group.findById(groupId)
+      .populate("expenses")
+      .populate("settlements");
+
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Calculate balances safely
+    let balances, owes;
+    try {
+      const result = calculateBalances(group);
+      balances = result.balances;
+      owes = result.owes;
+    } catch (calcError) {
+      console.error("Balance calculation error:", calcError);
+      return res.status(500).json({ error: "Failed to calculate balances" });
+    }
+
+    res.json({
+      group,
+      balances,
+      owes,
+    });
+  } catch (error) {
+    console.error("Group details error:", error);
+    res.status(500).json({ error: "Failed to load group details" });
+  }
+});
+
+// Settlement route
+
+app.post("/settle", isLoggedin, async (req, res) => {
+  try {
+    const { from, to, amount, groupId, paymentMethod, date, note } = req.body;
+
+    // Validate inputs
+    if (!from || !to || !amount || !groupId || !paymentMethod || !date) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Create settlement record
+    const settlement = {
+      from,
+      to,
+      amount: Math.round(Number(amount)),
+      paymentMethod,
+      date: new Date(date),
+      note: note || "",
+      settledAt: new Date(),
+    };
+
+    // Update group with new settlement
+    const updatedGroup = await groupModel
+      .findByIdAndUpdate(
+        groupId,
+        { $push: { settlements: settlement } },
+        { new: true }
+      )
+      .populate("expenses");
+
+    if (!updatedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Recalculate ALL balances
+    const result = calculateBalances(updatedGroup);
+
+    res.json({
+      success: true,
+      balances: result.balances,
+      owes: result.owes,
+      settlements: updatedGroup.settlements,
+      group: updatedGroup,
+    });
+  } catch (error) {
+    console.error("Settlement error:", error);
+    res.status(500).json({ error: "Failed to process settlement" });
+  }
 });
 //---------------------------------------------------------------------------//
 app.listen(port, () => {

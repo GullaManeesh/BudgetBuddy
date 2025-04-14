@@ -1,39 +1,79 @@
 function calculateBalances(group) {
   const balances = {};
-  const owes = {}; // New structure to track who owes whom
+  const owes = {};
 
-  // Initialize all members' balances
+  // Initialize balances and owes for all members
   group.members.forEach((member) => {
     balances[member.name] = 0;
-    owes[member.name] = []; // Initialize an array for each member
+    owes[member.name] = [];
   });
 
+  // Process expenses first (only calculate what each person paid)
   group.expenses.forEach((exp) => {
     const totalAmount = exp.amount;
     const paidBy = exp.paidBy;
 
+    // Add full amount to the payer
+    balances[paidBy] += totalAmount;
+
     if (exp.splitOption === "equal") {
       const perPerson = totalAmount / group.members.length;
+
       group.members.forEach((member) => {
-        if (member.name === paidBy) {
-          balances[paidBy] += totalAmount - perPerson;
-        } else {
-          balances[member.name] -= perPerson;
-          owes[member.name].push({ to: paidBy, amount: perPerson }); // Track who owes whom
+        balances[member.name] -= perPerson;
+
+        if (member.name !== paidBy) {
+          owes[member.name].push({ to: paidBy, amount: perPerson });
         }
       });
     } else {
       exp.splits.forEach((split) => {
-        if (split.member === paidBy) {
-          balances[paidBy] += split.amount;
-        } else {
-          balances[split.member] -= split.amount;
-          owes[split.member].push({ to: paidBy, amount: split.amount }); // Track who owes whom
+        const { member, amount } = split;
+
+        balances[member] -= amount;
+
+        if (member !== paidBy) {
+          owes[member].push({ to: paidBy, amount: amount });
         }
       });
     }
   });
 
+  // Process settlements (only adjust owes, not balances)
+  if (group.settlements && group.settlements.length > 0) {
+    group.settlements.forEach((settlement) => {
+      const { from, to, amount } = settlement;
+
+      // Adjust owes
+      if (owes[from]) {
+        for (let i = 0; i < owes[from].length; i++) {
+          if (owes[from][i].to === to) {
+            owes[from][i].amount -= amount;
+            if (owes[from][i].amount <= 0.01) {
+              owes[from].splice(i, 1);
+            }
+            break;
+          }
+        }
+      }
+
+      // ✅ Adjust balances as well
+      balances[from] += amount;
+      balances[to] -= amount;
+    });
+  }
+
+  // Clean up near-zero balances
+  Object.keys(balances).forEach((name) => {
+    if (Math.abs(balances[name]) < 0.01) balances[name] = 0;
+  });
+
+  // Filter out settled debts
+  Object.keys(owes).forEach((debtor) => {
+    owes[debtor] = owes[debtor].filter((debt) => debt.amount > 0.01);
+  });
+
   return { balances, owes };
 }
+
 module.exports = calculateBalances;

@@ -10,10 +10,24 @@
 
       <% groups.forEach((group) => { %>
       <div class="createdGroup">
-        <div class="groupTitle">
+        <div
+          class="groupTitle"
+          style="display: flex; justify-content: space-between">
           <h3 style="text-align: center">
             <%= group.groupName.toUpperCase() %>
           </h3>
+          <a
+            href="/group/<%=group._id%>/delete"
+            style="
+              text-decoration: none;
+              color: white;
+              background-color: red;
+              padding: 4px 5px;
+              border-radius: 5px;
+              font-size: 13px;
+            "
+            >Delete</a
+          >
         </div>
         <div class="top">
           <div class="topleft">
@@ -55,12 +69,14 @@
           <% if (selectedGroup && selectedGroup.expenses) { %>
           <h1><%=selectedGroup.groupName.toUpperCase()%></h1>
           <%}%>
-          <a href="" class="EditGroupDetails">Edit</a>
+          <a style="cursor: pointer" class="EditGroupDetails">Edit</a>
         </div>
         <div class="gdSec">
           <a href="#Home">Home</a>
           <a href="#Balances">Balances</a>
-          <a href="#Statistics">Statistics</a>
+          <a href="#Settlement History" style="width: auto; padding: 4px 6px"
+            >Settlement History</a
+          >
         </div>
         <div class="gdBody" data-group="<%=selectedGroup%>">
           <section id="Home">
@@ -200,7 +216,76 @@
               </div>
             </div>
 
-            <!-- edit group details -->
+            <!-- ADD SETTLE MODAL HERE -->
+            <div id="settleModal" class="modal">
+              <div class="modal-content">
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                  ">
+                  <h3>Settle Up</h3>
+                  <i
+                    class="fa-solid fa-circle-xmark"
+                    id="closeSettleModal"
+                    style="font-size: 20px; cursor: pointer"></i>
+                </div>
+
+                <div class="settle-details">
+                  <div class="settle-info">
+                    <p>
+                      <span id="settleFrom"></span> pays
+                      <span id="settleTo"></span>
+                    </p>
+                    <h2 id="settleAmount">₹0</h2>
+                    <!-- Will display whole number -->
+                  </div>
+
+                  <form id="settleForm" method="POST">
+                    <input type="hidden" id="settleFromInput" name="from" />
+                    <input type="hidden" id="settleToInput" name="to" />
+                    <input type="hidden" id="settleAmountInput" name="amount" />
+                    <input
+                      type="hidden"
+                      name="groupId"
+                      value="<%= selectedGroup._id %>" />
+
+                    <div class="form-group">
+                      <label>Payment Method:</label>
+                      <select name="paymentMethod" required>
+                        <option value="cash">Cash</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="upi">UPI</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Date:</label>
+                      <input
+                        type="date"
+                        name="date"
+                        required
+                        value="<%= new Date().toISOString().split('T')[0] %>" />
+                    </div>
+
+                    <div class="form-group">
+                      <label>Note (Optional):</label>
+                      <input
+                        type="text"
+                        name="note"
+                        placeholder="e.g., Lunch money" />
+                    </div>
+
+                    <button type="submit" class="settle-submit-btn">
+                      Confirm Settlement
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
             <div class="edit-group-div">
               <div style="display: flex; justify-content: space-between">
                 <h1 style="text-align: center; font-weight: 700">EDIT GROUP</h1>
@@ -351,6 +436,7 @@
 
             <% }) %> <% } else { %>
             <!-- add group expense -->
+            <% if (selectedGroup && selectedGroup.expenses) { %>
             <div class="expense-form-container">
               <div
                 style="
@@ -450,6 +536,57 @@
                 </button>
               </form>
             </div>
+
+            <% } %> <% if (selectedGroup) { %>
+            <div class="edit-group-div">
+              <div style="display: flex; justify-content: space-between">
+                <h1 style="text-align: center; font-weight: 700">EDIT GROUP</h1>
+                <i class="fa-solid fa-circle-xmark" id="closeEditGroup"></i>
+              </div>
+              <form action="/groups/edit" class="edit-group-form" method="POST">
+                <!-- Hidden group ID -->
+                <input
+                  type="hidden"
+                  name="groupId"
+                  value="<%= selectedGroup._id %>" />
+
+                <div>
+                  <h5 for="editGroupName">Edit Group Name:</h5>
+                  <input
+                    type="text"
+                    id="editGroupName"
+                    name="groupName"
+                    value="<%= selectedGroup.groupName %>"
+                    required
+                    placeholder="Enter new group name" />
+                </div>
+
+                <div id="editMembersContainer">
+                  <h5>Group Members (comma-separated):</h5>
+                  <textarea
+                    name="memberNames"
+                    placeholder="Edit members: John, Jack, Emily"
+                    required>
+<%= selectedGroup.members.map(member => member.name).join(', ') %></textarea
+                  >
+                </div>
+                <button
+                  type="submit"
+                  class="editGroupBtn"
+                  style="
+                    background-color: rgb(79, 79, 234);
+                    color: white;
+                    padding: 5px 4px;
+                    cursor: pointer;
+                    border: none;
+                  ">
+                  Edit Group
+                </button>
+              </form>
+            </div>
+
+            <% } %>
+
             <p>No group selected or no expenses available.</p>
             <% } %>
 
@@ -459,11 +596,11 @@
           <!-- balances section -->
           <section id="Balances">
             <div class="balances-container">
+              <!-- Balances cards -->
               <div
                 style="
                   width: 100%;
                   height: auto;
-
                   display: flex;
                   align-items: center;
                   flex-direction: column;
@@ -481,20 +618,56 @@
                 </div>
                 <% }) %>
               </div>
-              <div class="settle-up-title">Settle up</div>
-              <% Object.keys(owes).forEach((person) => { %> <%
-              owes[person].forEach((debt) => { %>
-              <div class="settle-row">
-                <span><%= person %> owes <strong><%= debt.to %></strong></span>
-                <span class="settle-amount"
-                  >₹<%= debt.amount.toFixed(0) %></span
-                >
-                <a href="/settle/<%= person %>" class="settle-btn">Settle</a>
+
+              <!-- Settle Up Section -->
+              <div class="settle-up-section">
+                <h3 class="settle-up-title" style="color: white">Settle Up</h3>
+                <% Object.keys(owes).forEach((person) => { %> <%
+                owes[person].forEach((debt) => { %>
+                <div class="settle-row">
+                  <span
+                    ><%= person %> owes <strong><%= debt.to %></strong></span
+                  >
+                  <span class="settle-amount"
+                    >₹<%= debt.amount.toFixed(0) %></span
+                  >
+                  <button
+                    class="settle-btn"
+                    data-from="<%= person %>"
+                    data-to="<%= debt.to %>"
+                    data-amount="<%= debt.amount %>">
+                    Settle
+                  </button>
+                </div>
+                <% }) %> <% }) %>
               </div>
-              <% }) %> <% }) %>
             </div>
           </section>
-          <section id="Statistics"></section>
+          <section id="Settlement History">
+            <!-- Settlement History -->
+            <div class="settlement-history">
+              <h3 style="color: white">Settlement History</h3>
+              <% if (selectedGroup && selectedGroup.settlements &&
+              selectedGroup.settlements.length > 0) { %> <%
+              selectedGroup.settlements.forEach(settlement => { %>
+              <div class="settlement-item">
+                <p>
+                  <%= settlement.from %> paid <%= settlement.to %> ₹<%=
+                  Math.round(settlement.amount) %> on <%= new
+                  Date(settlement.date).toLocaleDateString('en-US', { month:
+                  'long', day: 'numeric', year: new Date().getFullYear() !== new
+                  Date(settlement.date).getFullYear() ? 'numeric' : undefined })
+                  %>
+                </p>
+                <p class="settlement-method"><%= settlement.paymentMethod %></p>
+              </div>
+              <% }); %> <% } else { %>
+              <p style="color: rgb(165, 165, 165)">
+                No settlement history yet.
+              </p>
+              <% } %>
+            </div>
+          </section>
         </div>
 
         <!-- edit Group details -->
