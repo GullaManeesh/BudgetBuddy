@@ -1,0 +1,63 @@
+<section id="reminders">
+  <div class="remindersCon">
+    <div class="reminderDiv">
+      <p>Set Reminders</p>
+      <form action="/reminder/add" method="POST">
+        <input
+          type="text"
+          name="title"
+          placeholder="e.g. House Rent, Water Bill"
+          required />
+
+        <select name="frequency" id="frequencySelect" required>
+          <option value="">Select Frequency</option>
+          <option value="everyminute">Every Minute (test/debug)</option>
+          <option value="daily">Daily (select time)</option>
+          <option value="weekly">Weekly (select day & time)</option>
+          <option value="monthly">Monthly (select date & time)</option>
+        </select>
+
+        <div id="timeInput" style="display: none">
+          <label>
+            Time (24-hour format):
+            <input
+              style="color: white"
+              type="time"
+              name="time"
+              placeholder="e.g. 08:30" />
+          </label>
+        </div>
+
+        <div id="weeklyInput" style="display: none">
+          <label>
+            Day of Week:
+            <select name="day">
+              <option value="0">Sunday</option>
+              <option value="1">Monday</option>
+              <option value="2">Tuesday</option>
+              <option value="3">Wednesday</option>
+              <option value="4">Thursday</option>
+              <option value="5">Friday</option>
+              <option value="6">Saturday</option>
+            </select>
+            <small>Example: Rent reminder every Monday</small>
+          </label>
+        </div>
+
+        <div id="monthlyInput" style="display: none">
+          <label>
+            Date of Month (1–31):
+            <input
+              type="number"
+              name="date"
+              min="1"
+              max="31"
+              placeholder="e.g. 1 for 1st of every month" />
+          </label>
+        </div>
+
+        <button type="submit">Add Reminder</button>
+      </form>
+    </div>
+  </div>
+</section>

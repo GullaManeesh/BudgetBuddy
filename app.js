@@ -8,9 +8,12 @@ const cookieParser = require("cookie-parser");
 const budgetModel = require("./models/budgetModel");
 const expenseModel = require("./models/expenseModel");
 const groupModel = require("./models/groupModel");
+const reminderModel = require("./models/reminderModel");
 const groupExpenseModel = require("./models/groupExpenseModel");
 const session = require("express-session");
 const calculateBalances = require("./utils/calculateBalances");
+const nodemailer = require("nodemailer");
+const cron = require("node-cron");
 
 const ObjectId = mongoose.Types.ObjectId;
 require("dotenv").config();
@@ -37,7 +40,49 @@ app.use(express.static(path.join(__dirname, "public")));
 app.set("view engine", "ejs");
 app.use(cookieParser());
 
-//----------------------HOME PAGE--------------------------------------//
+// Make sure this is at the top with other requires
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+
+// Helper function to format the current time to "HH:mm"
+const formatTime = (date) => date.toTimeString().slice(0, 5); // "HH:MM"
+
+// Send reminder email function
+const sendReminderEmail = async () => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: "maneesh2045@gmail.com", // Static email
+    subject: "⏰ Reminder",
+    text: "Hello, how are you? This is your reminder every minute.\n\n– BudgetBuddy",
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Reminder sent to gullamanish2045@gmail.com`);
+  } catch (err) {
+    console.error("Error sending email:", err);
+  }
+};
+
+// Schedule cron to run every minute
+cron.schedule("* * * * *", async () => {
+  try {
+    const now = new Date();
+    now.setSeconds(0, 0); // Reset seconds and milliseconds to ensure exact match
+
+    // Send email every minute
+    await sendReminderEmail();
+    console.log(`Reminder email sent at ${now}`);
+  } catch (error) {
+    console.error("Error in reminder cron job:", error);
+  }
+});
+//---------------------HOME PAGE--------------------------------------//
 app.get("/", (req, res) => {
   res.render("index");
 });
@@ -465,54 +510,112 @@ app.post("/groups/:groupId", async (req, res) => {
 
 // Settlement route
 
-app.post("/settle", isLoggedin, async (req, res) => {
+app.post("/reminder/add", isLoggedin, async (req, res) => {
+  const { title, frequency, time = "00:00", day, date } = req.body;
+
+  const getNextDate = () => {
+    const nextDate = new Date();
+
+    if (frequency === "everyminute") {
+      nextDate.setMinutes(nextDate.getMinutes() + 1);
+    } else {
+      const [hours, minutes] = time.split(":").map(Number);
+      nextDate.setHours(hours, minutes, 0, 0);
+
+      if (frequency === "daily") {
+        if (nextDate <= new Date()) {
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
+      } else if (frequency === "weekly") {
+        const currentDay = new Date().getDay();
+        const daysToAdd = (parseInt(day) + 7 - currentDay) % 7 || 7;
+        nextDate.setDate(nextDate.getDate() + daysToAdd);
+      } else if (frequency === "monthly") {
+        const targetDay = parseInt(date);
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        nextDate.setDate(targetDay);
+      }
+    }
+
+    return normalizeDate(nextDate);
+  };
+
   try {
-    const { from, to, amount, groupId, paymentMethod, date, note } = req.body;
-
-    // Validate inputs
-    if (!from || !to || !amount || !groupId || !paymentMethod || !date) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    // Create settlement record
-    const settlement = {
-      from,
-      to,
-      amount: Math.round(Number(amount)),
-      paymentMethod,
-      date: new Date(date),
-      note: note || "",
-      settledAt: new Date(),
-    };
-
-    // Update group with new settlement
-    const updatedGroup = await groupModel
-      .findByIdAndUpdate(
-        groupId,
-        { $push: { settlements: settlement } },
-        { new: true }
-      )
-      .populate("expenses");
-
-    if (!updatedGroup) {
-      return res.status(404).json({ error: "Group not found" });
-    }
-
-    // Recalculate ALL balances
-    const result = calculateBalances(updatedGroup);
-
-    res.json({
-      success: true,
-      balances: result.balances,
-      owes: result.owes,
-      settlements: updatedGroup.settlements,
-      group: updatedGroup,
+    await reminderModel.create({
+      userId: req.user.userid,
+      title,
+      frequency,
+      time,
+      day: frequency === "weekly" ? parseInt(day) : undefined,
+      date: frequency === "monthly" ? parseInt(date) : undefined,
+      nextReminderDate: getNextDate(),
+      email: req.user.email,
+      isActive: true,
     });
+
+    res.redirect("/dashboard#reminders");
   } catch (error) {
-    console.error("Settlement error:", error);
-    res.status(500).json({ error: "Failed to process settlement" });
+    console.error("Error creating reminder:", error);
+    res.status(500).send("Error creating reminder");
   }
 });
+
+//-------------------------------reminders----------------------------------//
+app.post("/reminder/add", isLoggedin, async (req, res) => {
+  let { title, frequency, time, day, date } = req.body;
+
+  // Set default time if not provided
+  if (!time || time.trim() === "") {
+    time = "00:00";
+  }
+
+  const getNextDate = () => {
+    const now = new Date();
+    const [hour, minute] = time.split(":").map(Number);
+    const target = new Date();
+
+    if (frequency === "everyminute") {
+      now.setMinutes(now.getMinutes() + 1);
+      now.setSeconds(0); // Set seconds to 0
+      now.setMilliseconds(0); // Set milliseconds to 0
+      return now;
+    }
+
+    if (frequency === "daily") {
+      target.setDate(now.getDate() + 1);
+    } else if (frequency === "weekly") {
+      const currentDay = now.getDay();
+      const daysToAdd = (parseInt(day) + 7 - currentDay) % 7 || 7;
+      target.setDate(now.getDate() + daysToAdd);
+    } else if (frequency === "monthly") {
+      const targetDay = parseInt(date);
+      target.setMonth(now.getMonth() + 1);
+      target.setDate(targetDay);
+    }
+
+    target.setHours(hour);
+    target.setMinutes(minute);
+    target.setSeconds(0); // Ensure seconds are set to 0
+    target.setMilliseconds(0); // Ensure milliseconds are set to 0
+
+    return target;
+  };
+
+  await reminderModel.create({
+    userId: req.user.userid,
+    title,
+    frequency,
+    day: day ? parseInt(day) : undefined,
+    date: date ? parseInt(date) : undefined,
+    time,
+    nextReminderDate: getNextDate(),
+    email: req.user.email,
+    isActive: true, // Optional: default activate it
+  });
+
+  res.redirect("/dashboard#reminders");
+});
+
 //---------------------------------------------------------------------------//
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

@@ -600,6 +600,8 @@
               <div
                 style="
                   width: 100%;
+                  display: none;
+
                   height: auto;
                   display: flex;
                   align-items: center;
@@ -609,6 +611,7 @@
                 <% Object.keys(balances).forEach((person) => { %> <% const
                 amount = balances[person]; %>
                 <div
+                  style="display: none"
                   class="balance-card <%= amount >= 0 ? 'positive' : 'negative' %>">
                   <div class="balance-name"><%= person %></div>
                   <div class="balance-amount">

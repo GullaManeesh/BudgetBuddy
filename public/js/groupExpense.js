@@ -484,51 +484,6 @@ document.addEventListener("DOMContentLoaded", function () {
     overlay?.classList.remove("overlayShow");
   }
 
-  function updateBalancesUI(balances) {
-    const container = document.querySelector(".balances-container");
-    if (!container) return;
-
-    // Find the parent container where balance cards should be inserted
-    const balanceCardsContainer =
-      container.querySelector(".balance-cards-container") ||
-      document.createElement("div");
-    balanceCardsContainer.className = "balance-cards-container";
-
-    // Clear existing balance cards
-    balanceCardsContainer.innerHTML = "";
-
-    // Create and append new balance cards
-    Object.entries(balances).forEach(([name, balance]) => {
-      // Only show cards for non-zero balances
-      if (Math.abs(balance) > 0.01) {
-        const card = document.createElement("div");
-        card.className = `balance-card ${
-          balance >= 0 ? "positive" : "negative"
-        }`;
-
-        card.innerHTML = `
-        <div class="balance-name">${name}</div>
-        <div class="balance-amount">
-          ${balance >= 0 ? "+" : "-"}¥${Math.abs(balance).toFixed(0)}
-        </div>
-      `;
-
-        balanceCardsContainer.appendChild(card);
-      }
-    });
-
-    // If this is the first time, add the container to the DOM
-    if (!container.querySelector(".balance-cards-container")) {
-      // Insert before the settle-up section
-      const settleUpSection = container.querySelector(".settle-up-section");
-      if (settleUpSection) {
-        container.insertBefore(balanceCardsContainer, settleUpSection);
-      } else {
-        container.appendChild(balanceCardsContainer);
-      }
-    }
-  }
-
   // In your settlement form submission handler
   async function handleSettleSubmit(e) {
     e.preventDefault();
