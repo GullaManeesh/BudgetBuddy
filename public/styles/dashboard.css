@@ -31,6 +31,7 @@ body {
   height: 100%;
   width: 100%;
   scroll-behavior: smooth;
+  background-color: var(--background-black);
 }
 
 .main {
@@ -234,79 +235,4 @@ section {
 
 #monthSelector:focus {
   border-color: #aaa;
-}
-
-.remindersCon {
-  height: 100%;
-  width: 100%;
-  position: absolute;
-  padding: 10px;
-}
-
-.reminderDiv {
-  background-color: var(--light-grey);
-  padding: 20px;
-  color: white;
-  width: 500px;
-}
-
-.reminderDiv p {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.reminderDiv form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.reminderDiv input {
-  padding: 5px 4px;
-  outline: none;
-  background-color: transparent;
-  margin-top: 4px;
-  width: 60%;
-  border: 2px solid #b6b6b6;
-  border-radius: 4px;
-  color: white;
-}
-.reminderDiv select {
-  padding: 5px 4px;
-  outline: none;
-  background-color: transparent;
-  margin-top: 4px;
-  width: 60%;
-  border: 2px solid #b6b6b6;
-  border-radius: 4px;
-}
-
-.reminderDiv button {
-  padding: 6px 4px;
-  background-color: rgb(105, 105, 222);
-  border: none;
-  width: 100%;
-  cursor: pointer;
-  color: white;
-}
-
-.reminderDiv select {
-  color: white;
-}
-
-.reminderDiv select option {
-  color: black;
-}
-
-input[type="time"] {
-  color: white;
-  background-color: transparent; /* optional for dark backgrounds */
-  border: 1px solid white;
-  cursor: pointer;
-}
-
-input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(1); /* turns black icon to white */
-  cursor: pointer;
 }

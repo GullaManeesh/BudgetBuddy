@@ -9,16 +9,19 @@ const reminderSchema = new mongoose.Schema({
     required: true,
   },
   title: String,
+  description: String,
   frequency: {
     type: String,
-    enum: ["everyminute", "daily", "weekly", "monthly"],
+    enum: ["everyminute", "daily", "custom", "weekly", "monthly"],
     required: true,
   },
-  day: Number,
-  date: Number,
+  customDays: Number, // For custom day intervals
+  day: Number, // For weekly
+  date: Number, // For monthly
   time: String,
-  nextReminderDate: { type: Date, required: true },
+  nextReminderDate: { type: Date, required: true, index: true },
   email: String,
+  isActive: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model("Reminder", reminderSchema);

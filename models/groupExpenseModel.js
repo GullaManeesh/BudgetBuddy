@@ -19,6 +19,10 @@ const GroupExpenseSchema = new mongoose.Schema({
     ref: "Groups",
     required: true,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Users",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

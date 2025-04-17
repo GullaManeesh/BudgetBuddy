@@ -488,78 +488,94 @@ document.addEventListener("DOMContentLoaded", function () {
   async function handleSettleSubmit(e) {
     e.preventDefault();
 
-    const formData = new FormData(e.target);
-    const data = {
-      from: formData.get("from"),
-      to: formData.get("to"),
-      amount: formatAmount(formData.get("amount")),
-      groupId: formData.get("groupId"),
-      paymentMethod: formData.get("paymentMethod"),
-      date: formData.get("date"),
-      note: formData.get("note") || "",
-    };
+    const form = e.target;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
 
     try {
+      // Disable submit button to prevent multiple submissions
+      submitButton.disabled = true;
+      submitButton.textContent = "Processing...";
+
       const response = await fetch("/settle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          from: formData.get("from"),
+          to: formData.get("to"),
+          amount: formData.get("amount"),
+          groupId: formData.get("groupId"),
+          paymentMethod: formData.get("paymentMethod"),
+          date: formData.get("date"),
+          note: formData.get("note") || "",
+        }),
       });
 
-      if (!response.ok) throw new Error("Failed to process settlement");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Settlement failed");
+      }
 
       const result = await response.json();
 
       if (result.success) {
-        // Update all UI components
-        updateBalancesUI(result.balances);
-        updateOwesUI(result.owes);
-        updateSettlementsUI(result.settlements);
-
         // Close the modal
         closeSettleModalHandler();
 
-        // Force a refresh of the group data
-        const groupDetailsBtn = document.querySelector(".groupDetailsBtn");
-        if (groupDetailsBtn) {
-          groupDetailsBtn.click();
-        }
-      } else {
-        throw new Error(result.error || "Settlement failed");
+        // Force a full page reload to ensure all data is fresh
+        window.location.reload();
       }
     } catch (error) {
       console.error("Settlement error:", error);
-      alert("Failed to process settlement. Please try again.");
+      // Re-enable the button
+      submitButton.disabled = false;
+      submitButton.textContent = "Confirm Settlement";
+
+      // Show error message (you can customize this)
+      alert(`Settlement failed: ${error.message}`);
     }
   }
-
   // Update the UI functions
   function updateBalancesUI(balances) {
     const container = document.querySelector(".balances-container");
     if (!container) return;
 
+    // Clear existing balance cards
     const balanceCards = container.querySelectorAll(".balance-card");
     balanceCards.forEach((card) => card.remove());
 
+    // Add updated balance cards
     Object.entries(balances).forEach(([name, balance]) => {
       const card = document.createElement("div");
       card.className = `balance-card ${balance >= 0 ? "positive" : "negative"}`;
 
+      // Format the balance amount
       const displayAmount =
         Math.abs(balance) < 0.01
           ? "+₹0"
           : `${balance >= 0 ? "+" : "-"}₹${Math.abs(balance).toFixed(0)}`;
 
+      // Add the balance details to the card
       card.innerHTML = `
       <div class="balance-name">${name}</div>
       <div class="balance-amount">${displayAmount}</div>
     `;
 
+      // Append the card to the container
       container.insertBefore(
         card,
         container.querySelector(".settle-up-section")
       );
     });
+
+    // If no balances are available, show a message
+    if (Object.keys(balances).length === 0) {
+      const noBalances = document.createElement("p");
+      noBalances.textContent = "No balances to show.";
+      noBalances.style.color = "gray";
+      noBalances.style.textAlign = "center";
+      container.appendChild(noBalances);
+    }
   }
   function updateOwesUI(owes) {
     const container = document.querySelector(".settle-up-section");

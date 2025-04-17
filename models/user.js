@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema({
       ref: "Budgets",
     },
   ],
+  reminders: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reminder",
+    },
+  ],
 });
 
 module.exports = mongoose.model("Users", userSchema);

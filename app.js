@@ -49,39 +49,94 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Helper function to format the current time to "HH:mm"
-const formatTime = (date) => date.toTimeString().slice(0, 5); // "HH:MM"
+// Helper function to normalize dates (remove seconds and milliseconds)
+const normalizeDate = (date) => {
+  const normalized = new Date(date);
+  normalized.setSeconds(0, 0);
+  return normalized;
+};
 
-// Send reminder email function
-const sendReminderEmail = async () => {
+// Helper function to format time as HH:MM
+const formatTime = (date) => date.toTimeString().slice(0, 5);
+
+// Send reminder email
+const sendReminderEmail = async (reminder) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: "maneesh2045@gmail.com", // Static email
-    subject: "⏰ Reminder",
-    text: "Hello, how are you? This is your reminder every minute.\n\n– BudgetBuddy",
+    from: `"BudgetBuddy" <${process.env.EMAIL_USER}>`,
+    to: reminder.email,
+    subject: `⏰ Reminder: ${reminder.title}`,
+    text: `Hi,\n\nThis is your ${reminder.frequency} reminder for "${
+      reminder.title
+    }".${
+      reminder.description ? `\n\nDescription: ${reminder.description}` : ""
+    }\n\nStay on track!\n\n– BudgetBuddy`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #2c3e50;">BudgetBuddy Reminder</h2>
+        <p>This is your ${reminder.frequency} reminder for: <strong>${
+      reminder.title
+    }</strong></p>
+        ${
+          reminder.description
+            ? `<p>Description: ${reminder.description}</p>`
+            : ""
+        }
+        <p>Set to remind you at: ${reminder.time || "00:00"}</p>
+        <div style="margin-top: 20px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+          <p style="margin: 0;">Need to make changes? <a href="${
+            process.env.APP_URL || "http://localhost:3000"
+          }" style="color: #3498db; text-decoration: none;">View in app</a></p>
+        </div>
+        <p style="margin-top: 20px; color: #7f8c8d; font-size: 0.9em;">– Your BudgetBuddy Team</p>
+      </div>
+    `,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Reminder sent to gullamanish2045@gmail.com`);
-  } catch (err) {
-    console.error("Error sending email:", err);
+    console.log(`Reminder email sent to ${reminder.email}`);
+  } catch (error) {
+    console.error(`Error sending reminder email to ${reminder.email}:`, error);
   }
 };
-
-// Schedule cron to run every minute
 cron.schedule("* * * * *", async () => {
   try {
     const now = new Date();
-    now.setSeconds(0, 0); // Reset seconds and milliseconds to ensure exact match
+    const currentUTCDate = new Date(
+      now.toISOString().slice(0, 16) + ":00.000Z"
+    );
 
-    // Send email every minute
-    await sendReminderEmail();
-    console.log(`Reminder email sent at ${now}`);
+    const reminders = await reminderModel.find({
+      isActive: true,
+      nextReminderDate: { $lte: currentUTCDate },
+    });
+
+    for (const reminder of reminders) {
+      await sendReminderEmail(reminder);
+
+      const nextDate = new Date(reminder.nextReminderDate);
+      if (reminder.frequency === "everyminute") {
+        nextDate.setUTCMinutes(nextDate.getUTCMinutes() + 1);
+      } else if (reminder.frequency === "daily") {
+        nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+      } else if (reminder.frequency === "weekly") {
+        nextDate.setUTCDate(nextDate.getUTCDate() + 7);
+      } else if (reminder.frequency === "monthly") {
+        nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
+      }
+
+      if (nextDate <= currentUTCDate) {
+        nextDate.setUTCMinutes(currentUTCDate.getUTCMinutes() + 1);
+      }
+
+      reminder.nextReminderDate = nextDate;
+      await reminder.save();
+    }
   } catch (error) {
-    console.error("Error in reminder cron job:", error);
+    console.error("CRON JOB ERROR:", error);
   }
 });
+
 //---------------------HOME PAGE--------------------------------------//
 app.get("/", (req, res) => {
   res.render("index");
@@ -162,6 +217,8 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
     },
   });
 
+  const reminders = await reminderModel.find({ email: req.user.email });
+
   const groups = await groupModel.find({ createdBy: new ObjectId(user._id) });
 
   const budgetsData = await budgetModel
@@ -207,6 +264,7 @@ app.get("/dashboard", isLoggedin, async (req, res) => {
     selectedGroup,
     balances,
     owes,
+    reminders,
   });
 });
 
@@ -406,6 +464,7 @@ app.post("/groupExpenses/add", isLoggedin, async (req, res) => {
     paidBy,
     splitOption,
     groupId,
+    userId: req.user.userid,
     splits: splitOption === "manual" ? JSON.parse(splits) : [],
   });
 
@@ -509,113 +568,170 @@ app.post("/groups/:groupId", async (req, res) => {
 });
 
 // Settlement route
+app.post("/settle", isLoggedin, async (req, res) => {
+  try {
+    const { from, to, amount, groupId, paymentMethod, date, note } = req.body;
 
-app.post("/reminder/add", isLoggedin, async (req, res) => {
-  const { title, frequency, time = "00:00", day, date } = req.body;
-
-  const getNextDate = () => {
-    const nextDate = new Date();
-
-    if (frequency === "everyminute") {
-      nextDate.setMinutes(nextDate.getMinutes() + 1);
-    } else {
-      const [hours, minutes] = time.split(":").map(Number);
-      nextDate.setHours(hours, minutes, 0, 0);
-
-      if (frequency === "daily") {
-        if (nextDate <= new Date()) {
-          nextDate.setDate(nextDate.getDate() + 1);
-        }
-      } else if (frequency === "weekly") {
-        const currentDay = new Date().getDay();
-        const daysToAdd = (parseInt(day) + 7 - currentDay) % 7 || 7;
-        nextDate.setDate(nextDate.getDate() + daysToAdd);
-      } else if (frequency === "monthly") {
-        const targetDay = parseInt(date);
-        nextDate.setMonth(nextDate.getMonth() + 1);
-        nextDate.setDate(targetDay);
-      }
+    // Validate inputs
+    if (!from || !to || !amount || !groupId || !paymentMethod || !date) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    return normalizeDate(nextDate);
-  };
+    // Convert amount to number
+    const settlementAmount = parseFloat(amount);
+    if (isNaN(settlementAmount) || settlementAmount <= 0) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
 
-  try {
-    await reminderModel.create({
-      userId: req.user.userid,
-      title,
-      frequency,
-      time,
-      day: frequency === "weekly" ? parseInt(day) : undefined,
-      date: frequency === "monthly" ? parseInt(date) : undefined,
-      nextReminderDate: getNextDate(),
-      email: req.user.email,
-      isActive: true,
+    // Create settlement record
+    const settlement = {
+      from,
+      to,
+      amount: settlementAmount,
+      paymentMethod,
+      date: new Date(date),
+      note: note || "",
+      settledAt: new Date(),
+    };
+
+    // Update group with new settlement
+    const updatedGroup = await groupModel
+      .findByIdAndUpdate(
+        groupId,
+        { $push: { settlements: settlement } },
+        { new: true }
+      )
+      .populate("expenses");
+
+    if (!updatedGroup) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Recalculate ALL balances
+    const result = calculateBalances(updatedGroup);
+
+    // Return the updated data
+    res.json({
+      success: true,
+      balances: result.balances,
+      owes: result.owes,
+      settlements: updatedGroup.settlements,
+      group: updatedGroup,
     });
-
-    res.redirect("/dashboard#reminders");
   } catch (error) {
-    console.error("Error creating reminder:", error);
-    res.status(500).send("Error creating reminder");
+    console.error("Settlement error:", error);
+    res.status(500).json({ error: "Failed to process settlement" });
   }
 });
 
 //-------------------------------reminders----------------------------------//
 app.post("/reminder/add", isLoggedin, async (req, res) => {
-  let { title, frequency, time, day, date } = req.body;
+  const {
+    title,
+    description,
+    frequency,
+    time = "00:00",
+    day,
+    date,
+    customDays,
+  } = req.body;
 
-  // Set default time if not provided
-  if (!time || time.trim() === "") {
-    time = "00:00";
-  }
-
-  const getNextDate = () => {
+  // Helper to calculate initial UTC reminder time
+  const calculateInitialReminderTime = () => {
     const now = new Date();
-    const [hour, minute] = time.split(":").map(Number);
-    const target = new Date();
+    const utcNow = new Date(now.toISOString().slice(0, 16) + ":00.000Z");
 
     if (frequency === "everyminute") {
-      now.setMinutes(now.getMinutes() + 1);
-      now.setSeconds(0); // Set seconds to 0
-      now.setMilliseconds(0); // Set milliseconds to 0
-      return now;
+      // Start at the beginning of the next minute
+      const next = new Date(utcNow);
+      next.setUTCMinutes(next.getUTCMinutes() + 1);
+      next.setUTCSeconds(0);
+      next.setUTCMilliseconds(0);
+      return next;
     }
 
+    // For other frequencies
+    const [hours, minutes] = time.split(":").map(Number);
+    const target = new Date(utcNow);
+
+    // Set the target time
+    target.setUTCHours(hours, minutes, 0, 0);
+
+    // Adjust based on frequency
     if (frequency === "daily") {
-      target.setDate(now.getDate() + 1);
-    } else if (frequency === "weekly") {
-      const currentDay = now.getDay();
-      const daysToAdd = (parseInt(day) + 7 - currentDay) % 7 || 7;
-      target.setDate(now.getDate() + daysToAdd);
-    } else if (frequency === "monthly") {
-      const targetDay = parseInt(date);
-      target.setMonth(now.getMonth() + 1);
-      target.setDate(targetDay);
-    }
+      if (target <= now) {
+        target.setUTCDate(target.getUTCDate() + 1);
+      }
+    } else if (frequency === "custom") {
+      const daysToAdd = parseInt(customDays) || 1;
+      target.setUTCDate(target.getUTCDate() + daysToAdd);
 
-    target.setHours(hour);
-    target.setMinutes(minute);
-    target.setSeconds(0); // Ensure seconds are set to 0
-    target.setMilliseconds(0); // Ensure milliseconds are set to 0
+      // If we're still in the past (can happen with custom intervals)
+      while (target <= now) {
+        target.setUTCDate(target.getUTCDate() + daysToAdd);
+      }
+    } else if (frequency === "weekly") {
+      const currentDay = now.getUTCDay();
+      const targetDay = parseInt(day);
+      let daysToAdd = (targetDay - currentDay + 7) % 7;
+      if (daysToAdd === 0 && target <= now) daysToAdd = 7;
+      target.setUTCDate(target.getUTCDate() + daysToAdd);
+    } else if (frequency === "monthly") {
+      target.setUTCMonth(target.getUTCMonth() + 1);
+      target.setUTCDate(parseInt(date));
+
+      // Handle invalid dates (e.g., Feb 31)
+      if (target.getUTCDate() !== parseInt(date)) {
+        target.setUTCDate(0); // Last day of previous month
+      }
+    }
 
     return target;
   };
 
-  await reminderModel.create({
-    userId: req.user.userid,
-    title,
-    frequency,
-    day: day ? parseInt(day) : undefined,
-    date: date ? parseInt(date) : undefined,
-    time,
-    nextReminderDate: getNextDate(),
-    email: req.user.email,
-    isActive: true, // Optional: default activate it
+  try {
+    const nextReminderDate = calculateInitialReminderTime();
+
+    // Create the new reminder
+    const newReminder = await reminderModel.create({
+      userId: req.user.userid,
+      title,
+      description: description || undefined,
+      frequency,
+      customDays: frequency === "custom" ? parseInt(customDays) : undefined,
+      time,
+      day: frequency === "weekly" ? parseInt(day) : undefined,
+      date: frequency === "monthly" ? parseInt(date) : undefined,
+      nextReminderDate,
+      email: req.user.email,
+      isActive: true,
+    });
+
+    // Add the reminder ID to the user's reminders array
+    await userModel.findByIdAndUpdate(
+      req.user.userid,
+      { $push: { reminders: newReminder._id } },
+      { new: true }
+    );
+
+    res.redirect("/dashboard#reminders");
+  } catch (error) {
+    console.error("REMINDER CREATION ERROR:", error);
+    res.redirect("/dashboard#reminders");
+  }
+});
+
+app.post("/reminder/delete/:reminderId", isLoggedin, async (req, res) => {
+  const reminderId = req.params.reminderId;
+  const userId = req.user.userid;
+  await reminderModel.findByIdAndDelete(reminderId);
+
+  await userModel.findByIdAndUpdate(userId, {
+    $pull: { reminders: reminderId },
   });
 
   res.redirect("/dashboard#reminders");
 });
-
 //---------------------------------------------------------------------------//
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

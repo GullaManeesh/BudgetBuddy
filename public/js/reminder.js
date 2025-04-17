@@ -22,3 +22,22 @@ frequencySelect.addEventListener("change", () => {
     monthlyInput.style.display = "block";
   }
 });
+
+document
+  .getElementById("frequencySelect")
+  .addEventListener("change", function () {
+    const frequency = this.value;
+    document.getElementById("timeInput").style.display =
+      frequency === "daily" ||
+      frequency === "weekly" ||
+      frequency === "monthly" ||
+      frequency === "custom"
+        ? "block"
+        : "none";
+    document.getElementById("weeklyInput").style.display =
+      frequency === "weekly" ? "block" : "none";
+    document.getElementById("monthlyInput").style.display =
+      frequency === "monthly" ? "block" : "none";
+    document.getElementById("customDaysInput").style.display =
+      frequency === "custom" ? "block" : "none";
+  });

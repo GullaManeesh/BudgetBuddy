@@ -1,63 +1,221 @@
-<section id="reminders">
+<section id="reminders" style="height: max-content; border: none">
   <div class="remindersCon">
-    <div class="reminderDiv">
-      <p>Set Reminders</p>
-      <form action="/reminder/add" method="POST">
-        <input
-          type="text"
-          name="title"
-          placeholder="e.g. House Rent, Water Bill"
-          required />
+    <h1
+      style="
+        text-align: center;
+        color: white;
+        margin-bottom: 20px;
+        font-size: 30px;
+      ">
+      REMINDERS
+    </h1>
+    <div class="allReminders">
+      <div class="reminderDiv">
+        <p>Set Reminders</p>
+        <form action="/reminder/add" method="POST">
+          <input
+            type="text"
+            name="title"
+            placeholder="e.g. House Rent, Water Bill"
+            required />
 
-        <select name="frequency" id="frequencySelect" required>
-          <option value="">Select Frequency</option>
-          <option value="everyminute">Every Minute (test/debug)</option>
-          <option value="daily">Daily (select time)</option>
-          <option value="weekly">Weekly (select day & time)</option>
-          <option value="monthly">Monthly (select date & time)</option>
-        </select>
+          <textarea
+            name="description"
+            placeholder="Add a description (optional)"
+            rows="3"></textarea>
 
-        <div id="timeInput" style="display: none">
-          <label>
-            Time (24-hour format):
-            <input
-              style="color: white"
-              type="time"
-              name="time"
-              placeholder="e.g. 08:30" />
-          </label>
+          <select name="frequency" id="frequencySelect" required>
+            <option value="">Select Frequency</option>
+            <option value="everyminute">Every Minute</option>
+            <option value="daily">Daily</option>
+            <option value="custom">Custom Days (e.g. every 2 days)</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+
+          <!-- Custom days input -->
+          <div id="customDaysInput" style="display: none">
+            <label>
+              Repeat every (days):
+              <input
+                type="number"
+                name="customDays"
+                min="1"
+                max="365"
+                placeholder="e.g. 2 for every 2 days" />
+            </label>
+          </div>
+
+          <!-- Time input -->
+          <div id="timeInput" style="display: none">
+            <label>
+              Time (24-hour format):
+              <input
+                style="color: white"
+                type="time"
+                name="time"
+                value="00:00"
+                placeholder="e.g. 08:30" />
+            </label>
+          </div>
+
+          <!-- Weekly input -->
+          <div id="weeklyInput" style="display: none">
+            <label>
+              Day of Week:
+              <select name="day">
+                <option value="0">Sunday</option>
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+              </select>
+            </label>
+          </div>
+
+          <!-- Monthly input -->
+          <div id="monthlyInput" style="display: none">
+            <label>
+              Date of Month (1–31):
+              <input
+                type="number"
+                name="date"
+                min="1"
+                max="31"
+                placeholder="e.g. 1 for 1st of every month" />
+            </label>
+          </div>
+
+          <button type="submit">Add Reminder</button>
+        </form>
+      </div>
+      <h1
+        style="
+          text-align: center;
+          color: white;
+          margin-bottom: 20px;
+          font-size: 30px;
+        ">
+        CREATED REMINDERS
+      </h1>
+      <div class="createdReminders">
+        <% if (reminders.length === 0) { %>
+        <p class="no-reminders" style="color: white; font-style: italic">
+          No reminders created yet.
+        </p>
+        <% } else { %> <% reminders.forEach(reminder => { %>
+        <div
+          class="reminder-card"
+          style="
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            color: white;
+            position: relative;
+          ">
+          <div
+            class="reminder-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 10px;
+            ">
+            <h3 style="margin: 0; color: #4caf50">
+              <%= reminder.title.toUpperCase() %>
+            </h3>
+            <span
+              class="reminder-frequency"
+              style="
+                background: rgba(76, 175, 80, 0.2);
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-size: 0.8em;
+              ">
+              <% if (reminder.frequency === 'custom') { %> Every <%=
+              reminder.customDays %> days <% } else { %> <%=
+              reminder.frequency.charAt(0).toUpperCase() +
+              reminder.frequency.slice(1) %> <% } %>
+            </span>
+          </div>
+
+          <% if (reminder.description) { %>
+          <p class="reminder-description" style="margin: 8px 0; color: #ddd">
+            <%= reminder.description %>
+          </p>
+          <% } %>
+
+          <div
+            class="reminder-details"
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              gap: 15px;
+              margin-top: 10px;
+              font-size: 0.9em;
+            ">
+            <div class="detail">
+              <span style="color: #aaa">Next reminder:</span>
+              <span style="font-weight: bold">
+                <%= new Date(reminder.nextReminderDate).toLocaleString() %>
+              </span>
+            </div>
+
+            <% if (reminder.frequency === 'weekly') { %>
+            <div class="detail">
+              <span style="color: #aaa">Day:</span>
+              <span>
+                <%= ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+                'Friday', 'Saturday'][reminder.day] %>
+              </span>
+            </div>
+            <% } %> <% if (reminder.frequency === 'monthly') { %>
+            <div class="detail">
+              <span style="color: #aaa">Date:</span>
+              <span>
+                <%= reminder.date %><%= getOrdinalSuffix(reminder.date) %> of
+                month
+              </span>
+            </div>
+            <% } %>
+
+            <div class="detail">
+              <span style="color: #aaa">Time:</span>
+              <span><%= reminder.time || '00:00' %></span>
+            </div>
+          </div>
+
+          <div
+            class="reminder-actions"
+            style="margin-top: 15px; display: flex; gap: 10px">
+            <form
+              action="/reminder/delete/<%= reminder._id %>"
+              method="POST"
+              style="margin: 0">
+              <button
+                type="submit"
+                style="
+                  background: #ff4444;
+                  color: white;
+                  border: none;
+                  padding: 5px 10px;
+                  border-radius: 4px;
+                  cursor: pointer;
+                  font-size: 0.8em;
+                ">
+                Delete
+              </button>
+            </form>
+          </div>
         </div>
+        <% }); %> <% } %>
+      </div>
 
-        <div id="weeklyInput" style="display: none">
-          <label>
-            Day of Week:
-            <select name="day">
-              <option value="0">Sunday</option>
-              <option value="1">Monday</option>
-              <option value="2">Tuesday</option>
-              <option value="3">Wednesday</option>
-              <option value="4">Thursday</option>
-              <option value="5">Friday</option>
-              <option value="6">Saturday</option>
-            </select>
-            <small>Example: Rent reminder every Monday</small>
-          </label>
-        </div>
-
-        <div id="monthlyInput" style="display: none">
-          <label>
-            Date of Month (1–31):
-            <input
-              type="number"
-              name="date"
-              min="1"
-              max="31"
-              placeholder="e.g. 1 for 1st of every month" />
-          </label>
-        </div>
-
-        <button type="submit">Add Reminder</button>
-      </form>
+      <% function getOrdinalSuffix(d) { if (d > 3 && d < 21) return 'th'; switch
+      (d % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd";
+      default: return "th"; } } %>
     </div>
   </div>
 </section>
