@@ -22,6 +22,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const settleModal = document.getElementById("settleModal");
   const closeSettleModal = document.getElementById("closeSettleModal");
 
+  const navLinks = document.querySelectorAll(".nav-link");
+
+  navLinks.forEach((link) => {
+    link.addEventListener("click", function () {
+      navLinks.forEach((l) => l.classList.remove("active"));
+      this.classList.add("active");
+    });
+  });
+
   // Helper function for safe JSON parsing
   function safeJsonParse(jsonString) {
     try {
@@ -493,7 +502,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const submitButton = form.querySelector('button[type="submit"]');
 
     try {
-      // Disable submit button to prevent multiple submissions
       submitButton.disabled = true;
       submitButton.textContent = "Processing...";
 
@@ -518,23 +526,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const result = await response.json();
 
-      if (result.success) {
-        // Close the modal
-        closeSettleModalHandler();
+      // Update UI with the new data
+      updateBalancesUI(result.balances);
+      updateOwesUI(result.owes);
+      updateSettlementsUI(result.group.settlements);
 
-        // Force a full page reload to ensure all data is fresh
-        window.location.reload();
-      }
+      // Close the modal
+      closeSettleModalHandler();
     } catch (error) {
       console.error("Settlement error:", error);
-      // Re-enable the button
       submitButton.disabled = false;
       submitButton.textContent = "Confirm Settlement";
-
-      // Show error message (you can customize this)
       alert(`Settlement failed: ${error.message}`);
     }
   }
+
   // Update the UI functions
   function updateBalancesUI(balances) {
     const container = document.querySelector(".balances-container");
@@ -546,37 +552,47 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Add updated balance cards
     Object.entries(balances).forEach(([name, balance]) => {
-      const card = document.createElement("div");
-      card.className = `balance-card ${balance >= 0 ? "positive" : "negative"}`;
+      // Only show meaningful balances (greater than 1 rupee)
+      if (Math.abs(balance) >= 1) {
+        const card = document.createElement("div");
+        card.className = `balance-card ${
+          balance >= 0 ? "positive" : "negative"
+        }`;
 
-      // Format the balance amount
-      const displayAmount =
-        Math.abs(balance) < 0.01
-          ? "+₹0"
-          : `${balance >= 0 ? "+" : "-"}₹${Math.abs(balance).toFixed(0)}`;
+        // Format the balance amount
+        const displayAmount = `${balance >= 0 ? "+" : "-"}₹${Math.abs(
+          Math.round(balance)
+        )}`;
 
-      // Add the balance details to the card
-      card.innerHTML = `
-      <div class="balance-name">${name}</div>
-      <div class="balance-amount">${displayAmount}</div>
-    `;
+        card.innerHTML = `
+        <div class="balance-name">${name}</div>
+        <div class="balance-amount">${displayAmount}</div>
+      `;
 
-      // Append the card to the container
-      container.insertBefore(
-        card,
-        container.querySelector(".settle-up-section")
-      );
+        // Insert before the settle-up section
+        const settleSection = container.querySelector(".settle-up-section");
+        if (settleSection) {
+          container.insertBefore(card, settleSection);
+        } else {
+          container.appendChild(card);
+        }
+      }
     });
 
-    // If no balances are available, show a message
-    if (Object.keys(balances).length === 0) {
+    // If no meaningful balances, show a message
+    if (
+      Object.keys(balances).filter((name) => Math.abs(balances[name]) >= 1)
+        .length === 0
+    ) {
       const noBalances = document.createElement("p");
-      noBalances.textContent = "No balances to show.";
-      noBalances.style.color = "gray";
+      noBalances.textContent = "All settled up!";
+      noBalances.style.color = "white";
       noBalances.style.textAlign = "center";
+      noBalances.style.margin = "10px 0";
       container.appendChild(noBalances);
     }
   }
+
   function updateOwesUI(owes) {
     const container = document.querySelector(".settle-up-section");
     if (!container) return;
@@ -587,16 +603,19 @@ document.addEventListener("DOMContentLoaded", function () {
     if (title) container.appendChild(title);
 
     // Add updated settle rows
+    let hasDebts = false;
+
     Object.entries(owes).forEach(([debtor, debts]) => {
       debts.forEach((debt) => {
-        if (debt.amount > 0.01) {
-          // Only show meaningful debts
+        // Only show meaningful debts (greater than 1 rupee)
+        if (debt.amount >= 1) {
+          hasDebts = true;
           const row = document.createElement("div");
           row.className = "settle-row";
 
           row.innerHTML = `
           <span>${debtor} owes <strong>${debt.to}</strong></span>
-          <span class="settle-amount">₹${debt.amount.toFixed(0)}</span>
+          <span class="settle-amount">₹${Math.round(debt.amount)}</span>
           <button class="settle-btn" 
                   data-from="${debtor}" 
                   data-to="${debt.to}" 
@@ -609,7 +628,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
     });
+
+    // If no debts, show a message
+    if (!hasDebts) {
+      const noDebts = document.createElement("p");
+      noDebts.textContent = "No debts to settle";
+      noDebts.style.color = "white";
+      noDebts.style.textAlign = "center";
+      noDebts.style.margin = "10px 0";
+      container.appendChild(noDebts);
+    }
   }
+
+  // Update the event delegation for settle buttons
+  document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("settle-btn")) {
+      e.preventDefault();
+      const from = e.target.dataset.from;
+      const to = e.target.dataset.to;
+      const amount = parseFloat(e.target.dataset.amount);
+
+      if (from && to && !isNaN(amount) && amount > 0) {
+        showSettleModal(from, to, amount);
+      }
+    }
+  });
 
   function updateSettlementsUI(settlements) {
     const container = document.querySelector(".settlement-history");

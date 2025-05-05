@@ -1,43 +1,42 @@
-const frequencySelect = document.getElementById("frequencySelect");
-const timeInput = document.getElementById("timeInput");
-const weeklyInput = document.getElementById("weeklyInput");
-const monthlyInput = document.getElementById("monthlyInput");
+document.addEventListener("DOMContentLoaded", function () {
+  const frequencySelect = document.getElementById("frequencySelect");
+  const timeInput = document.getElementById("timeInput");
+  const weeklyInput = document.getElementById("weeklyInput");
+  const monthlyInput = document.getElementById("monthlyInput");
+  const customDaysInput = document.getElementById("customDaysInput");
 
-frequencySelect.addEventListener("change", () => {
-  timeInput.style.display = "none";
-  weeklyInput.style.display = "none";
-  monthlyInput.style.display = "none";
+  function updateInputVisibility() {
+    const frequency = frequencySelect.value;
 
-  if (
-    frequencySelect.value === "daily" ||
-    frequencySelect.value === "weekly" ||
-    frequencySelect.value === "monthly"
-  ) {
-    timeInput.style.display = "block";
-  }
-  if (frequencySelect.value === "weekly") {
-    weeklyInput.style.display = "block";
-  }
-  if (frequencySelect.value === "monthly") {
-    monthlyInput.style.display = "block";
-  }
-});
+    // Reset all inputs
+    timeInput.style.display = "none";
+    weeklyInput.style.display = "none";
+    monthlyInput.style.display = "none";
+    customDaysInput.style.display = "none";
 
-document
-  .getElementById("frequencySelect")
-  .addEventListener("change", function () {
-    const frequency = this.value;
-    document.getElementById("timeInput").style.display =
+    // Show relevant inputs based on selection
+    if (
       frequency === "daily" ||
       frequency === "weekly" ||
       frequency === "monthly" ||
       frequency === "custom"
-        ? "block"
-        : "none";
-    document.getElementById("weeklyInput").style.display =
-      frequency === "weekly" ? "block" : "none";
-    document.getElementById("monthlyInput").style.display =
-      frequency === "monthly" ? "block" : "none";
-    document.getElementById("customDaysInput").style.display =
-      frequency === "custom" ? "block" : "none";
-  });
+    ) {
+      timeInput.style.display = "block";
+    }
+    if (frequency === "weekly") {
+      weeklyInput.style.display = "block";
+    }
+    if (frequency === "monthly") {
+      monthlyInput.style.display = "block";
+    }
+    if (frequency === "custom") {
+      customDaysInput.style.display = "block";
+    }
+  }
+
+  // Initial setup
+  updateInputVisibility();
+
+  // Add event listener
+  frequencySelect.addEventListener("change", updateInputVisibility);
+});

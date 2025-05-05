@@ -72,9 +72,12 @@
           <a style="cursor: pointer" class="EditGroupDetails">Edit</a>
         </div>
         <div class="gdSec">
-          <a href="#Home">Home</a>
-          <a href="#Balances">Balances</a>
-          <a href="#Settlement History" style="width: auto; padding: 4px 6px"
+          <a href="#Home" class="nav-link active">Home</a>
+          <a href="#Balances" class="nav-link">Balances</a>
+          <a
+            href="#Settlement History"
+            class="nav-link"
+            style="width: auto; padding: 4px 6px"
             >Settlement History</a
           >
         </div>
@@ -597,31 +600,29 @@
           <section id="Balances">
             <div class="balances-container">
               <!-- Balances cards -->
-              <div
-                style="
-                  width: 100%;
-                  display: none;
-
-                  height: auto;
-                  display: flex;
-                  align-items: center;
-                  flex-direction: column;
-                  gap: 10px;
-                ">
-                <% Object.keys(balances).forEach((person) => { %> <% const
-                amount = balances[person]; %>
+              <div class="cardContainer" style="padding-top: 20px">
                 <div
-                  style="display: none"
-                  class="balance-card <%= amount >= 0 ? 'positive' : 'negative' %>">
-                  <div class="balance-name"><%= person %></div>
-                  <div class="balance-amount">
-                    <%= amount >= 0 ? '+' : '-' %>₹<%=
-                    Math.abs(amount).toFixed(0) %>
+                  style="
+                    width: 100%;
+                    height: auto;
+                    display: flex;
+                    align-items: center;
+                    flex-direction: column;
+                    gap: 10px;
+                  ">
+                  <% Object.keys(balances).forEach((person) => { %> <% const
+                  amount = balances[person]; %>
+                  <div
+                    class="balance-card <%= amount >= 0 ? 'positive' : 'negative' %>">
+                    <div class="balance-name"><%= person %></div>
+                    <div class="balance-amount">
+                      <%= amount >= 0 ? '+' : '-' %>₹<%=
+                      Math.abs(amount).toFixed(0) %>
+                    </div>
                   </div>
+                  <% }) %>
                 </div>
-                <% }) %>
               </div>
-
               <!-- Settle Up Section -->
               <div class="settle-up-section">
                 <h3 class="settle-up-title" style="color: white">Settle Up</h3>
@@ -685,19 +686,6 @@
   <div class="create-group-div">
     <h1 style="text-align: center; font-weight: 700">CREATE GROUP</h1>
     <form action="/groups/create" class="create-group-form" method="POST">
-      <!-- <div class="IconInput groupExpenseInput">
-        <h2>Select Icon</h2>
-        <div class="emoji-container">
-          <input
-            type="text"
-            id="selectedIcon"
-            name="groupExpenseEmoji"
-            placeholder="😀"
-            readonly
-            required />
-          <emoji-picker id="iconPicker"></emoji-picker>
-        </div>
-      </div> -->
       <div>
         <h3 for="groupName">Group Name:</h3>
         <input
