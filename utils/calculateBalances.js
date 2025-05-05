@@ -2,13 +2,12 @@ function calculateBalances(group) {
   const balances = {};
   const owes = {};
 
-  // Initialize balances and owes for all members
+  // Initialize balances for all members
   group.members.forEach((member) => {
     balances[member.name] = 0;
-    owes[member.name] = [];
   });
 
-  // Process expenses
+  // Calculate net balances from expenses
   group.expenses.forEach((exp) => {
     const totalAmount = exp.amount;
     const paidBy = exp.paidBy;
@@ -20,84 +19,84 @@ function calculateBalances(group) {
           balances[paidBy] += totalAmount - perPerson;
         } else {
           balances[member.name] -= perPerson;
-          // Only add to owes if the amount is significant
-          if (perPerson > 0.01) {
-            owes[member.name].push({ to: paidBy, amount: perPerson });
-          }
         }
       });
     } else {
+      // Handle manual splits
       exp.splits.forEach((split) => {
         if (split.member === paidBy) {
           balances[paidBy] += split.amount;
         } else {
           balances[split.member] -= split.amount;
-          // Only add to owes if the amount is significant
-          if (split.amount > 0.01) {
-            owes[split.member].push({ to: paidBy, amount: split.amount });
-          }
         }
       });
     }
   });
 
-  // Process settlements
+  // Apply settlements to adjust balances
   if (group.settlements && group.settlements.length > 0) {
     group.settlements.forEach((settlement) => {
-      let remainingAmount = settlement.amount;
-      const { from, to } = settlement;
-
-      // Adjust balances
-      balances[from] -= settlement.amount;
-      balances[to] += settlement.amount;
-
-      // Adjust owes - first try to settle existing debts
-      if (owes[from]) {
-        for (let i = owes[from].length - 1; i >= 0; i--) {
-          if (owes[from][i].to === to) {
-            const remaining = owes[from][i].amount - remainingAmount;
-            if (remaining > 0.01) {
-              owes[from][i].amount = remaining;
-              remainingAmount = 0; // All settlement amount used
-              break;
-            } else {
-              owes[from].splice(i, 1);
-              remainingAmount = Math.abs(remaining); // Carry over any excess
-              // If we settled more than owed, create reverse entry
-              if (remainingAmount > 0.01) {
-                if (!owes[to]) owes[to] = [];
-                owes[to].push({ to: from, amount: remainingAmount });
-              }
-              break;
-            }
-          }
-        }
-      }
+      balances[settlement.from] -= settlement.amount;
+      balances[settlement.to] += settlement.amount;
     });
   }
 
-  // Clean up near-zero balances
+  // Round to 2 decimal places to avoid floating point issues
   Object.keys(balances).forEach((name) => {
-    if (Math.abs(balances[name]) < 0.01) balances[name] = 0;
+    balances[name] = Math.round(balances[name] * 100) / 100;
   });
 
-  // Filter out settled debts and consolidate
-  Object.keys(owes).forEach((debtor) => {
-    const consolidated = {};
-    owes[debtor].forEach((debt) => {
-      if (debt.amount > 0.01) {
-        if (!consolidated[debt.to]) {
-          consolidated[debt.to] = debt.amount;
-        } else {
-          consolidated[debt.to] += debt.amount;
-        }
-      }
-    });
+  // Calculate optimal owes (simplified settlement)
+  const creditors = [];
+  const debtors = [];
 
-    owes[debtor] = Object.keys(consolidated).map((to) => ({
-      to,
-      amount: consolidated[to],
-    }));
+  // Separate into creditors (positive balance) and debtors (negative balance)
+  Object.keys(balances).forEach((name) => {
+    if (balances[name] > 0) {
+      creditors.push({ name, amount: balances[name] });
+    } else if (balances[name] < 0) {
+      debtors.push({ name, amount: -balances[name] });
+    }
+  });
+
+  // Sort creditors and debtors by amount (largest first)
+  creditors.sort((a, b) => b.amount - a.amount);
+  debtors.sort((a, b) => b.amount - a.amount);
+
+  // Calculate who owes whom how much (optimal settlement)
+  const transactions = [];
+  let i = 0,
+    j = 0;
+
+  while (i < creditors.length && j < debtors.length) {
+    const creditor = creditors[i];
+    const debtor = debtors[j];
+
+    const amount = Math.min(creditor.amount, debtor.amount);
+
+    if (amount > 0.01) {
+      // Ignore tiny amounts
+      transactions.push({
+        from: debtor.name,
+        to: creditor.name,
+        amount: amount,
+      });
+
+      creditor.amount -= amount;
+      debtor.amount -= amount;
+    }
+
+    if (creditor.amount < 0.01) i++;
+    if (debtor.amount < 0.01) j++;
+  }
+
+  // Convert transactions to owes format
+  transactions.forEach((txn) => {
+    if (!owes[txn.from]) owes[txn.from] = [];
+    owes[txn.from].push({
+      to: txn.to,
+      amount: txn.amount,
+    });
   });
 
   return { balances, owes };
