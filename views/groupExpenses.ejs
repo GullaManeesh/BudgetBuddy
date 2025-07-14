@@ -74,12 +74,12 @@
         <div class="gdSec">
           <a href="#Home" class="nav-link active">Home</a>
           <a href="#Balances" class="nav-link">Balances</a>
-          <a
+          <!-- <a
             href="#Settlement History"
             class="nav-link"
             style="width: auto; padding: 4px 6px"
             >Settlement History</a
-          >
+          > -->
         </div>
         <div class="gdBody" data-group="<%=selectedGroup%>">
           <section id="Home">
@@ -635,20 +635,19 @@
                   <span class="settle-amount"
                     >₹<%= debt.amount.toFixed(0) %></span
                   >
-                  <button
+                  <!-- <button
                     class="settle-btn"
                     data-from="<%= person %>"
                     data-to="<%= debt.to %>"
                     data-amount="<%= debt.amount %>">
                     Settle
-                  </button>
+                  </button> -->
                 </div>
                 <% }) %> <% }) %>
               </div>
             </div>
           </section>
-          <section id="Settlement History">
-            <!-- Settlement History -->
+          <!-- <section id="Settlement History">
             <div class="settlement-history">
               <h3 style="color: white">Settlement History</h3>
               <% if (selectedGroup && selectedGroup.settlements &&
@@ -671,7 +670,7 @@
               </p>
               <% } %>
             </div>
-          </section>
+          </section> -->
         </div>
 
         <!-- edit Group details -->
