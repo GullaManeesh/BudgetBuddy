@@ -22,9 +22,29 @@ connectDB();
 
 const app = express();
 
+const normalizeOrigin = (origin) =>
+  String(origin || "")
+    .trim()
+    .replace(/\/+$/, "");
+
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const normalized = normalizeOrigin(origin);
+      if (allowedOrigins.includes(normalized)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
