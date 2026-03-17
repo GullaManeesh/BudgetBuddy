@@ -40,17 +40,31 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
+        const email = profile.emails?.[0]?.value;
         let user = await User.findOne({ googleId: profile.id });
+
+        if (!user && email) {
+          user = await User.findOne({ email });
+          if (user && !user.googleId) {
+            user.googleId = profile.id;
+            user.name = user.name || profile.displayName;
+            user.avatar = user.avatar || profile.photos?.[0]?.value || "";
+            await user.save();
+          }
+        }
+
         if (!user) {
           user = await User.create({
             googleId: profile.id,
             name: profile.displayName,
-            email: profile.emails[0].value,
-            avatar: profile.photos[0]?.value || "",
+            email,
+            avatar: profile.photos?.[0]?.value || "",
           });
         }
 
-        await acceptPendingInvitesForUser(user);
+        try {
+          await acceptPendingInvitesForUser(user);
+        } catch (_) {}
         return done(null, user);
       } catch (err) {
         return done(err, null);
