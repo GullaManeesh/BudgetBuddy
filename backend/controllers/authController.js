@@ -8,7 +8,10 @@ const googleCallback = async (req, res) => {
     });
     res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
   } catch (error) {
-    res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`);
+    const reason = error?.message || "google_callback_failed";
+    res.redirect(
+      `${process.env.CLIENT_URL}/login?error=auth_failed&reason=${encodeURIComponent(reason)}`,
+    );
   }
 };
 
