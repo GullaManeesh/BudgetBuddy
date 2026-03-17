@@ -19,7 +19,12 @@ export default function Login() {
 
   useEffect(() => {
     if (searchParams.get("error") === "auth_failed") {
-      toast.error("Login failed. Please try again.");
+      const reason = searchParams.get("reason");
+      toast.error(
+        reason
+          ? `Login failed: ${decodeURIComponent(reason)}`
+          : "Login failed. Please try again.",
+      );
     }
   }, [searchParams]);
 

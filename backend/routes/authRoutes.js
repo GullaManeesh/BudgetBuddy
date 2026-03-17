@@ -12,10 +12,23 @@ router.get(
 
 router.get(
   "/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: `${process.env.CLIENT_URL}/login?error=auth_failed`,
-  }),
+  (req, res, next) => {
+    passport.authenticate("google", { session: false }, (err, user, info) => {
+      if (err || !user) {
+        const reason =
+          err?.message ||
+          info?.message ||
+          req.query?.error_description ||
+          req.query?.error ||
+          "unknown";
+        return res.redirect(
+          `${process.env.CLIENT_URL}/login?error=auth_failed&reason=${encodeURIComponent(reason)}`,
+        );
+      }
+      req.user = user;
+      return next();
+    })(req, res, next);
+  },
   googleCallback,
 );
 
